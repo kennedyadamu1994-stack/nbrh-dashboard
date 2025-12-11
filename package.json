@@ -1,14 +1,14 @@
 {
-     "name": "nbrh-dashboard",
-     "version": "1.0.0",
-     "scripts": {
-       "build": "echo 'No build step required'"
-     },
-     "dependencies": {
-       "googleapis": "^128.0.0"
-     },
-     "devDependencies": {
-       "@vercel/node": "^3.0.0",
-       "typescript": "^5.3.0"
-     }
-   }
+  "name": "nbrh-dashboard",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.3.0"
+  }
+}
