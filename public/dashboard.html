@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My NBRH Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,18 +15,25 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: #1a1a1a;
+      font-family: 'Young Serif', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, serif;
+      background: #000000;
       color: #ffffff;
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* Header */
     .header {
-      background: #0f0f0f;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       color: white;
-      padding: 24px 20px;
-      border-bottom: 1px solid #2a2a2a;
+      padding: 32px 24px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .header-content {
@@ -35,51 +45,51 @@
     }
 
     .header h1 {
-      font-size: 32px;
-      font-weight: 900;
+      font-size: 28px;
+      font-weight: 400;
       color: #FF1B6E;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: -0.5px;
     }
 
     .logout-btn {
-      background: rgba(255, 27, 110, 0.1);
-      border: 1px solid #FF1B6E;
+      background: rgba(255, 27, 110, 0.15);
+      border: none;
       color: #FF1B6E;
-      padding: 10px 20px;
-      border-radius: 6px;
+      padding: 10px 24px;
+      border-radius: 20px;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s;
+      font-weight: 400;
+      font-family: 'Young Serif', serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .logout-btn:hover {
-      background: #FF1B6E;
-      color: white;
+      background: rgba(255, 27, 110, 0.25);
+      transform: scale(1.02);
     }
 
     /* Main container */
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 24px 20px;
+      padding: 48px 24px;
     }
 
     /* Loading state */
     .loading {
       text-align: center;
-      padding: 60px 20px;
+      padding: 120px 20px;
     }
 
     .spinner {
-      border: 4px solid #2a2a2a;
-      border-top: 4px solid #FF1B6E;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top: 2px solid #FF1B6E;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
+      width: 40px;
+      height: 40px;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 24px;
     }
 
     @keyframes spin {
@@ -89,10 +99,10 @@
 
     /* Error state */
     .error-state {
-      background: rgba(220, 38, 38, 0.1);
-      border: 2px solid #dc2626;
-      border-radius: 12px;
-      padding: 24px;
+      background: rgba(255, 27, 110, 0.05);
+      border: 1px solid rgba(255, 27, 110, 0.2);
+      border-radius: 16px;
+      padding: 48px 24px;
       text-align: center;
       display: none;
     }
@@ -102,30 +112,33 @@
     }
 
     .error-state h2 {
-      color: #ff6b6b;
+      color: #FF1B6E;
       margin-bottom: 12px;
+      font-weight: 400;
+      font-size: 24px;
     }
 
     .error-state p {
-      color: #fca5a5;
-      margin-bottom: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 24px;
     }
 
     .retry-btn {
       background: #FF1B6E;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
+      padding: 12px 32px;
+      border-radius: 24px;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s;
+      font-family: 'Young Serif', serif;
+      font-weight: 400;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .retry-btn:hover {
-      background: #d91659;
-      transform: translateY(-2px);
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(255, 27, 110, 0.3);
     }
 
     /* Dashboard content */
@@ -141,91 +154,114 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
+      gap: 24px;
+      margin-bottom: 64px;
     }
 
     .stat-card {
-      background: #2a2a2a;
-      padding: 24px;
-      border-radius: 12px;
-      border: 1px solid #3a3a3a;
-      border-left: 4px solid #FF1B6E;
-      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 32px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .stat-card:hover {
-      border-color: #FF1B6E;
       transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(255, 27, 110, 0.2);
+      border-color: rgba(255, 27, 110, 0.3);
+      box-shadow: 0 16px 48px rgba(255, 27, 110, 0.1);
     }
 
     .stat-label {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 8px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 12px;
+      font-weight: 400;
+      letter-spacing: 1px;
     }
 
     .stat-value {
-      font-size: 32px;
-      font-weight: 900;
+      font-size: 36px;
+      font-weight: 400;
       color: #ffffff;
+      letter-spacing: -1px;
     }
 
     /* Section */
     .section {
-      background: #2a2a2a;
-      border-radius: 12px;
-      padding: 28px;
-      margin-bottom: 24px;
-      border: 1px solid #3a3a3a;
+      background: transparent;
+      border-radius: 24px;
+      padding: 0;
+      margin-bottom: 80px;
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid #3a3a3a;
+      margin-bottom: 32px;
     }
 
     .section-title {
-      font-size: 24px;
-      font-weight: 900;
+      font-size: 32px;
+      font-weight: 400;
       color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: -0.5px;
     }
 
     .section-subtitle {
       font-size: 14px;
-      color: #9ca3af;
+      color: rgba(255, 255, 255, 0.5);
       margin-top: 4px;
+      font-weight: 400;
     }
 
     /* Session cards */
     .session-grid {
       display: grid;
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
     }
 
     .session-card {
-      background: #1f1f1f;
-      border: 1px solid #3a3a3a;
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
 
     .session-card:hover {
-      border-color: #FF1B6E;
-      transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(255, 27, 110, 0.2);
+      transform: translateY(-8px);
+      border-color: rgba(255, 27, 110, 0.3);
+      box-shadow: 0 20px 60px rgba(255, 27, 110, 0.15);
+    }
+
+    .session-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: linear-gradient(135deg, rgba(255, 27, 110, 0.2) 0%, rgba(255, 27, 110, 0.05) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      position: relative;
+    }
+
+    .session-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .session-content {
+      padding: 24px;
     }
 
     .session-header {
@@ -233,76 +269,88 @@
       justify-content: space-between;
       align-items: start;
       margin-bottom: 16px;
+      gap: 16px;
     }
 
     .session-title {
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 400;
       color: #ffffff;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      line-height: 1.3;
+      letter-spacing: -0.3px;
     }
 
     .session-sport {
-      font-size: 14px;
+      font-size: 13px;
       color: #FF1B6E;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-weight: 400;
       letter-spacing: 0.5px;
     }
 
     .session-badge {
-      background: #FF1B6E;
-      color: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      background: rgba(255, 27, 110, 0.2);
+      color: #FF1B6E;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 400;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 27, 110, 0.3);
     }
 
     .session-badge.today {
-      background: #10b981;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.3);
     }
 
     .session-badge.tomorrow {
-      background: #3b82f6;
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      border-color: rgba(59, 130, 246, 0.3);
     }
 
     .session-badge.attended {
-      background: #10b981;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.3);
     }
 
     .session-badge.no-show {
-      background: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
     }
 
     .session-badge.pending {
-      background: #f59e0b;
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.3);
     }
 
     .session-details {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
       gap: 12px;
       font-size: 14px;
-      color: #d1d5db;
-      margin-bottom: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 20px;
     }
 
     .session-detail {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .session-detail strong {
       font-size: 16px;
+      font-weight: 400;
     }
 
     .session-footer {
-      padding-top: 16px;
-      border-top: 1px solid #3a3a3a;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -310,59 +358,59 @@
 
     .session-price {
       font-size: 24px;
-      font-weight: 900;
+      font-weight: 400;
       color: #FF1B6E;
+      letter-spacing: -0.5px;
     }
 
     .session-difficulty {
-      font-size: 12px;
-      color: #9ca3af;
-      background: #3a3a3a;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.05);
       padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      text-transform: uppercase;
+      border-radius: 12px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
     }
 
     /* Recommendation reason */
     .recommendation-reason {
-      margin-top: 12px;
+      margin-top: 16px;
       font-size: 13px;
-      color: #9ca3af;
+      color: rgba(255, 255, 255, 0.5);
       font-style: italic;
-      padding-top: 12px;
-      border-top: 1px solid #3a3a3a;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* Attendee link */
     .attendee-link {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       color: #FF1B6E;
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 600;
-      transition: color 0.2s;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .attendee-link:hover {
-      color: #ff4d8f;
-      text-decoration: underline;
+      opacity: 0.7;
     }
 
     /* Empty state */
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
-      color: #9ca3af;
+      padding: 80px 24px;
+      color: rgba(255, 255, 255, 0.4);
     }
 
     .empty-state h3 {
       font-size: 20px;
       margin-bottom: 12px;
-      color: #d1d5db;
-      font-weight: 700;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
     }
 
     /* Pagination */
@@ -370,75 +418,85 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 16px;
-      margin-top: 24px;
+      gap: 20px;
+      margin-top: 40px;
     }
 
     .pagination button {
-      background: #FF1B6E;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
+      background: rgba(255, 27, 110, 0.15);
+      color: #FF1B6E;
+      border: 1px solid rgba(255, 27, 110, 0.3);
+      padding: 10px 24px;
+      border-radius: 20px;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s;
+      font-family: 'Young Serif', serif;
+      font-weight: 400;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .pagination button:disabled {
-      background: #3a3a3a;
-      color: #6b7280;
+      background: rgba(255, 255, 255, 0.03);
+      color: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.08);
       cursor: not-allowed;
     }
 
     .pagination button:hover:not(:disabled) {
-      background: #d91659;
-      transform: translateY(-2px);
+      background: rgba(255, 27, 110, 0.25);
+      transform: scale(1.05);
     }
 
     .pagination-info {
       font-size: 14px;
-      color: #d1d5db;
-      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
     }
 
     /* Profile section */
     .profile-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
     }
 
     .profile-item {
-      padding: 16px;
-      background: #1f1f1f;
-      border-radius: 8px;
-      border: 1px solid #3a3a3a;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .profile-item:hover {
+      border-color: rgba(255, 27, 110, 0.3);
     }
 
     .profile-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-bottom: 6px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: 1px;
     }
 
     .profile-value {
       font-size: 15px;
       color: #ffffff;
-      font-weight: 500;
+      font-weight: 400;
+      line-height: 1.5;
     }
 
     /* Responsive */
     @media (max-width: 768px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
       }
 
-      .session-details {
+      .session-grid {
         grid-template-columns: 1fr;
       }
 
@@ -453,7 +511,11 @@
       }
 
       .section-title {
-        font-size: 20px;
+        font-size: 24px;
+      }
+
+      .container {
+        padding: 32px 16px;
       }
     }
   </style>
@@ -702,43 +764,48 @@
 
       const sessionsHTML = sessions.map(session => `
         <div class="session-card">
-          <div class="session-header">
-            <div>
-              <div class="session-title">${session.title}</div>
-              <div class="session-sport">${session.sport}</div>
-            </div>
-            ${session.badge ? `<span class="session-badge ${session.badge.toLowerCase().replace(/\s+/g, '-')}">${session.badge}</span>` : ''}
+          <div class="session-image">
+            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : getSportEmoji(session.sport)}
           </div>
-          <div class="session-details">
-            <div class="session-detail">
-              <strong>📅</strong> ${formatDate(session.date)}
+          <div class="session-content">
+            <div class="session-header">
+              <div>
+                <div class="session-title">${session.title}</div>
+                <div class="session-sport">${session.sport}</div>
+              </div>
+              ${session.badge ? `<span class="session-badge ${session.badge.toLowerCase().replace(/\s+/g, '-')}">${session.badge}</span>` : ''}
             </div>
-            <div class="session-detail">
-              <strong>🕐</strong> ${session.time}
+            <div class="session-details">
+              <div class="session-detail">
+                <strong>📅</strong> ${formatDate(session.date)}
+              </div>
+              <div class="session-detail">
+                <strong>🕐</strong> ${session.time}
+              </div>
+              <div class="session-detail">
+                <strong>📍</strong> ${session.venue}
+              </div>
+              <div class="session-detail">
+                <strong>🏙️</strong> ${session.borough}
+              </div>
             </div>
-            <div class="session-detail">
-              <strong>📍</strong> ${session.venue}
+            <div class="session-footer">
+              <div class="session-price">£${session.price.toFixed(2)}</div>
+              ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
             </div>
-            <div class="session-detail">
-              <strong>🏙️</strong> ${session.borough}
+            ${session.attendeeUrl ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
+                <span>👥</span> View Attendees
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
             </div>
+            ` : ''}
           </div>
-          <div class="session-footer">
-            <div class="session-price">£${session.price.toFixed(2)}</div>
-            ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
-          </div>
-          ${session.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
-            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
-              <span>👥</span> View Attendees
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-          </div>
-          ` : ''}
         </div>
       `).join('');
 
@@ -760,43 +827,48 @@
 
       const recommendationsHTML = recommendations.map(rec => `
         <div class="session-card">
-          <div class="session-header">
-            <div>
-              <div class="session-title">${rec.title}</div>
-              <div class="session-sport">${rec.sport}</div>
-            </div>
+          <div class="session-image">
+            ${rec.image ? `<img src="${rec.image}" alt="${rec.title}" />` : getSportEmoji(rec.sport)}
           </div>
-          <div class="session-details">
-            <div class="session-detail">
-              <strong>📅</strong> ${formatDate(rec.date)}
+          <div class="session-content">
+            <div class="session-header">
+              <div>
+                <div class="session-title">${rec.title}</div>
+                <div class="session-sport">${rec.sport}</div>
+              </div>
             </div>
-            <div class="session-detail">
-              <strong>🕐</strong> ${rec.time}
+            <div class="session-details">
+              <div class="session-detail">
+                <strong>📅</strong> ${formatDate(rec.date)}
+              </div>
+              <div class="session-detail">
+                <strong>🕐</strong> ${rec.time}
+              </div>
+              <div class="session-detail">
+                <strong>📍</strong> ${rec.venue}
+              </div>
+              <div class="session-detail">
+                <strong>🏙️</strong> ${rec.borough}
+              </div>
             </div>
-            <div class="session-detail">
-              <strong>📍</strong> ${rec.venue}
+            <div class="session-footer">
+              <div class="session-price">£${rec.price.toFixed(2)}</div>
+              ${rec.difficulty ? `<div class="session-difficulty">${rec.difficulty}</div>` : ''}
             </div>
-            <div class="session-detail">
-              <strong>🏙️</strong> ${rec.borough}
+            ${rec.reason ? `<div class="recommendation-reason">${rec.reason}</div>` : ''}
+            ${rec.attendeeUrl ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <a href="${rec.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
+                <span>👥</span> View Event Details
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
             </div>
+            ` : ''}
           </div>
-          <div class="session-footer">
-            <div class="session-price">£${rec.price.toFixed(2)}</div>
-            ${rec.difficulty ? `<div class="session-difficulty">${rec.difficulty}</div>` : ''}
-          </div>
-          ${rec.reason ? `<div class="recommendation-reason">${rec.reason}</div>` : ''}
-          ${rec.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
-            <a href="${rec.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
-              <span>👥</span> View Event Details
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-          </div>
-          ` : ''}
         </div>
       `).join('');
 
@@ -820,45 +892,50 @@
 
       const sessionsHTML = sessions.map(session => `
         <div class="session-card">
-          <div class="session-header">
-            <div>
-              <div class="session-title">${session.title}</div>
-              <div class="session-sport">${session.sport}</div>
+          <div class="session-image">
+            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : getSportEmoji(session.sport)}
+          </div>
+          <div class="session-content">
+            <div class="session-header">
+              <div>
+                <div class="session-title">${session.title}</div>
+                <div class="session-sport">${session.sport}</div>
+              </div>
+              ${session.attendanceStatus ? `
+                <span class="session-badge ${session.attendanceStatus.toLowerCase().replace('-', '')}">${session.attendanceStatus}</span>
+              ` : ''}
             </div>
-            ${session.attendanceStatus ? `
-              <span class="session-badge ${session.attendanceStatus.toLowerCase().replace('-', '')}">${session.attendanceStatus}</span>
+            <div class="session-details">
+              <div class="session-detail">
+                <strong>📅</strong> ${formatDate(session.date)}
+              </div>
+              <div class="session-detail">
+                <strong>🕐</strong> ${session.time}
+              </div>
+              <div class="session-detail">
+                <strong>📍</strong> ${session.venue}
+              </div>
+              <div class="session-detail">
+                <strong>🏙️</strong> ${session.borough}
+              </div>
+            </div>
+            <div class="session-footer">
+              <div class="session-price">£${session.price.toFixed(2)}</div>
+              ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
+            </div>
+            ${session.attendeeUrl ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
+                <span>👥</span> View Attendees
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+            </div>
             ` : ''}
           </div>
-          <div class="session-details">
-            <div class="session-detail">
-              <strong>📅</strong> ${formatDate(session.date)}
-            </div>
-            <div class="session-detail">
-              <strong>🕐</strong> ${session.time}
-            </div>
-            <div class="session-detail">
-              <strong>📍</strong> ${session.venue}
-            </div>
-            <div class="session-detail">
-              <strong>🏙️</strong> ${session.borough}
-            </div>
-          </div>
-          <div class="session-footer">
-            <div class="session-price">£${session.price.toFixed(2)}</div>
-            ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
-          </div>
-          ${session.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
-            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
-              <span>👥</span> View Attendees
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-          </div>
-          ` : ''}
         </div>
       `).join('');
 
@@ -954,6 +1031,41 @@
     // ==========================================
     // UTILITY FUNCTIONS
     // ==========================================
+
+    function getSportEmoji(sport) {
+      const sportEmojis = {
+        'basketball': '🏀',
+        'football': '⚽',
+        'tennis': '🎾',
+        'badminton': '🏸',
+        'volleyball': '🏐',
+        'rugby': '🏉',
+        'cricket': '🏏',
+        'baseball': '⚾',
+        'hockey': '🏒',
+        'table tennis': '🏓',
+        'squash': '🎾',
+        'yoga': '🧘',
+        'pilates': '🤸',
+        'running': '🏃',
+        'cycling': '🚴',
+        'swimming': '🏊',
+        'gym': '💪',
+        'boxing': '🥊',
+        'martial arts': '🥋',
+        'climbing': '🧗',
+        'dance': '💃',
+        'fitness': '🏋️'
+      };
+      
+      const sportLower = sport.toLowerCase();
+      for (const [key, emoji] of Object.entries(sportEmojis)) {
+        if (sportLower.includes(key)) {
+          return emoji;
+        }
+      }
+      return '⚡'; // Default icon
+    }
 
     function formatDate(dateString) {
       const date = new Date(dateString);
