@@ -13,17 +13,17 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: #f7fafc;
-      color: #2d3748;
+      background: #1a1a1a;
+      color: #ffffff;
       line-height: 1.6;
     }
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #0f0f0f;
       color: white;
       padding: 24px 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid #2a2a2a;
     }
 
     .header-content {
@@ -35,23 +35,28 @@
     }
 
     .header h1 {
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 32px;
+      font-weight: 900;
+      color: #FF1B6E;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .logout-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      padding: 8px 16px;
+      background: rgba(255, 27, 110, 0.1);
+      border: 1px solid #FF1B6E;
+      color: #FF1B6E;
+      padding: 10px 20px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
-      transition: background 0.3s;
+      font-weight: 600;
+      transition: all 0.3s;
     }
 
     .logout-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: #FF1B6E;
+      color: white;
     }
 
     /* Main container */
@@ -68,8 +73,8 @@
     }
 
     .spinner {
-      border: 4px solid #e2e8f0;
-      border-top: 4px solid #667eea;
+      border: 4px solid #2a2a2a;
+      border-top: 4px solid #FF1B6E;
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -84,9 +89,9 @@
 
     /* Error state */
     .error-state {
-      background: #fff5f5;
-      border: 2px solid #fc8181;
-      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.1);
+      border: 2px solid #dc2626;
+      border-radius: 12px;
       padding: 24px;
       text-align: center;
       display: none;
@@ -97,28 +102,30 @@
     }
 
     .error-state h2 {
-      color: #c53030;
+      color: #ff6b6b;
       margin-bottom: 12px;
     }
 
     .error-state p {
-      color: #742a2a;
+      color: #fca5a5;
       margin-bottom: 16px;
     }
 
     .retry-btn {
-      background: #667eea;
+      background: #FF1B6E;
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
+      transition: all 0.3s;
     }
 
     .retry-btn:hover {
-      background: #5568d3;
+      background: #d91659;
+      transform: translateY(-2px);
     }
 
     /* Dashboard content */
@@ -139,53 +146,64 @@
     }
 
     .stat-card {
-      background: white;
-      padding: 20px;
+      background: #2a2a2a;
+      padding: 24px;
       border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      border-left: 4px solid #667eea;
+      border: 1px solid #3a3a3a;
+      border-left: 4px solid #FF1B6E;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      border-color: #FF1B6E;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(255, 27, 110, 0.2);
     }
 
     .stat-label {
-      font-size: 14px;
-      color: #718096;
+      font-size: 13px;
+      color: #9ca3af;
       margin-bottom: 8px;
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #2d3748;
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffffff;
     }
 
     /* Section */
     .section {
-      background: white;
+      background: #2a2a2a;
       border-radius: 12px;
-      padding: 24px;
+      padding: 28px;
       margin-bottom: 24px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid #3a3a3a;
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #3a3a3a;
     }
 
     .section-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #2d3748;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .section-subtitle {
       font-size: 14px;
-      color: #718096;
+      color: #9ca3af;
       margin-top: 4px;
     }
 
@@ -196,113 +214,124 @@
     }
 
     .session-card {
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 16px;
-      transition: border-color 0.3s, box-shadow 0.3s;
+      background: #1f1f1f;
+      border: 1px solid #3a3a3a;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
       cursor: pointer;
     }
 
     .session-card:hover {
-      border-color: #667eea;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      border-color: #FF1B6E;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(255, 27, 110, 0.2);
     }
 
     .session-header {
       display: flex;
       justify-content: space-between;
       align-items: start;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .session-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #2d3748;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
       margin-bottom: 4px;
     }
 
     .session-sport {
       font-size: 14px;
-      color: #667eea;
-      font-weight: 500;
+      color: #FF1B6E;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .session-badge {
-      background: #667eea;
+      background: #FF1B6E;
       color: white;
-      padding: 4px 12px;
-      border-radius: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .session-badge.today {
-      background: #48bb78;
+      background: #10b981;
     }
 
     .session-badge.tomorrow {
-      background: #4299e1;
+      background: #3b82f6;
     }
 
     .session-badge.attended {
-      background: #48bb78;
+      background: #10b981;
     }
 
     .session-badge.no-show {
-      background: #f56565;
+      background: #ef4444;
     }
 
     .session-badge.pending {
-      background: #ed8936;
+      background: #f59e0b;
     }
 
     .session-details {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 12px;
       font-size: 14px;
-      color: #4a5568;
+      color: #d1d5db;
+      margin-bottom: 16px;
     }
 
     .session-detail {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
 
     .session-detail strong {
-      margin-right: 6px;
+      font-size: 16px;
     }
 
     .session-footer {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+      border-top: 1px solid #3a3a3a;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .session-price {
-      font-size: 18px;
-      font-weight: 700;
-      color: #667eea;
+      font-size: 24px;
+      font-weight: 900;
+      color: #FF1B6E;
     }
 
     .session-difficulty {
       font-size: 12px;
-      color: #718096;
-      background: #edf2f7;
-      padding: 4px 8px;
-      border-radius: 4px;
+      color: #9ca3af;
+      background: #3a3a3a;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
     }
 
     /* Recommendation reason */
     .recommendation-reason {
-      margin-top: 8px;
+      margin-top: 12px;
       font-size: 13px;
-      color: #718096;
+      color: #9ca3af;
       font-style: italic;
+      padding-top: 12px;
+      border-top: 1px solid #3a3a3a;
     }
 
     /* Attendee link */
@@ -310,29 +339,30 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: #667eea;
+      color: #FF1B6E;
       text-decoration: none;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       transition: color 0.2s;
     }
 
     .attendee-link:hover {
-      color: #5568d3;
+      color: #ff4d8f;
       text-decoration: underline;
     }
 
     /* Empty state */
     .empty-state {
       text-align: center;
-      padding: 40px 20px;
-      color: #718096;
+      padding: 60px 20px;
+      color: #9ca3af;
     }
 
     .empty-state h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-      color: #4a5568;
+      font-size: 20px;
+      margin-bottom: 12px;
+      color: #d1d5db;
+      font-weight: 700;
     }
 
     /* Pagination */
@@ -340,33 +370,37 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 12px;
-      margin-top: 20px;
+      gap: 16px;
+      margin-top: 24px;
     }
 
     .pagination button {
-      background: #667eea;
+      background: #FF1B6E;
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
+      transition: all 0.3s;
     }
 
     .pagination button:disabled {
-      background: #cbd5e0;
+      background: #3a3a3a;
+      color: #6b7280;
       cursor: not-allowed;
     }
 
     .pagination button:hover:not(:disabled) {
-      background: #5568d3;
+      background: #d91659;
+      transform: translateY(-2px);
     }
 
     .pagination-info {
       font-size: 14px;
-      color: #4a5568;
+      color: #d1d5db;
+      font-weight: 500;
     }
 
     /* Profile section */
@@ -377,22 +411,25 @@
     }
 
     .profile-item {
-      padding: 12px;
-      background: #f7fafc;
-      border-radius: 6px;
+      padding: 16px;
+      background: #1f1f1f;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
     }
 
     .profile-label {
       font-size: 12px;
-      color: #718096;
-      margin-bottom: 4px;
+      color: #9ca3af;
+      margin-bottom: 6px;
       font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .profile-value {
       font-size: 15px;
-      color: #2d3748;
+      color: #ffffff;
+      font-weight: 500;
     }
 
     /* Responsive */
@@ -407,8 +444,16 @@
 
       .header-content {
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
         text-align: center;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 20px;
       }
     }
   </style>
@@ -622,7 +667,7 @@
           <div class="stat-value">${stats.totalHoursPlayed || 0}h</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Total Spent <span style="font-size: 11px; font-weight: 400; color: #a0aec0;">(includes fees)</span></div>
+          <div class="stat-label">Total Spent <span style="font-size: 10px; font-weight: 400; color: #6b7280;">(includes fees)</span></div>
           <div class="stat-value">£${(stats.totalSpent || 0).toFixed(2)}</div>
         </div>
         ${stats.mostPlayedSport ? `
@@ -683,9 +728,8 @@
             ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
           ${session.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
-               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
+            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
               <span>👥</span> View Attendees
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -742,9 +786,8 @@
           </div>
           ${rec.reason ? `<div class="recommendation-reason">${rec.reason}</div>` : ''}
           ${rec.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-            <a href="${rec.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
-               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
+            <a href="${rec.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
               <span>👥</span> View Event Details
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -805,9 +848,8 @@
             ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
           ${session.attendeeUrl ? `
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
-               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3a;">
+            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" class="attendee-link">
               <span>👥</span> View Attendees
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
