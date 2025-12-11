@@ -1,11 +1,29 @@
 import { google } from 'googleapis';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID!;
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID!;
 const ONBOARDING_SHEET = 'Onboarding Database';
 const SESSIONS_SHEET = 'NBRH Sessions';
 const EVENTS_SHEET = 'NBRH Events';
 const BOOKINGS_SHEET = 'NBRH Bookings';
+
+// Parse service account credentials from JSON
+function getServiceAccountCredentials() {
+  const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountKey) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is missing');
+  }
+  
+  try {
+    const credentials = JSON.parse(serviceAccountKey);
+    return {
+      client_email: credentials.client_email,
+      private_key: credentials.private_key,
+    };
+  } catch (error) {
+    throw new Error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY: ' + (error instanceof Error ? error.message : 'Invalid JSON'));
+  }
+}
 
 interface UserProfile {
   email: string;
@@ -68,10 +86,12 @@ function getColumnIndex(headers: any[], columnName: string): number {
 }
 
 async function getSheets() {
+  const credentials = getServiceAccountCredentials();
+  
   const auth = new google.auth.GoogleAuth({
     credentials: {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      client_email: credentials.client_email,
+      private_key: credentials.private_key,
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
@@ -313,20 +333,70 @@ export default async function handler(
 
   try {
     // Validate environment variables
-    if (!SPREADSHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
-      throw new Error('Missing required environment variables');
+    console.log('[DEBUG] Checking environment variables...');
+    if (!SPREADSHEET_ID) {
+      throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID is missing');
+    }
+    if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+      throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is missing');
+    }
+    
+    // Test parsing credentials
+    try {
+      getServiceAccountCredentials();
+    } catch (error) {
+      throw new Error('Invalid service account credentials: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+    
+    console.log('[DEBUG] Environment variables OK');
+
+    // Fetch all data with individual error handling
+    console.log('[DEBUG] Fetching user profile...');
+    let userProfile: UserProfile | null = null;
+    try {
+      userProfile = await fetchUserProfile(email);
+    } catch (error) {
+      console.error('[ERROR] Failed to fetch user profile:', error);
+      throw new Error(`User profile fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
-    // Fetch all data
-    const [userProfile, sessions, events, bookings] = await Promise.all([
-      fetchUserProfile(email),
-      fetchSessions(),
-      fetchEvents(),
-      fetchBookings(email),
-    ]);
-
     if (!userProfile) {
+      console.log('[DEBUG] User not found:', email);
       return res.status(404).json({ error: 'User not found' });
+    }
+    console.log('[DEBUG] User profile fetched:', userProfile.email);
+
+    console.log('[DEBUG] Fetching sessions...');
+    let sessions: Session[] = [];
+    try {
+      sessions = await fetchSessions();
+      console.log(`[DEBUG] Fetched ${sessions.length} sessions`);
+    } catch (error) {
+      console.error('[ERROR] Failed to fetch sessions:', error);
+      // Continue with empty sessions rather than failing
+      sessions = [];
+    }
+
+    console.log('[DEBUG] Fetching events...');
+    let events: Event[] = [];
+    try {
+      events = await fetchEvents();
+      console.log(`[DEBUG] Fetched ${events.length} events`);
+    } catch (error) {
+      console.error('[ERROR] Failed to fetch events:', error);
+      // Continue with empty events rather than failing
+      events = [];
+    }
+
+    console.log('[DEBUG] Fetching bookings...');
+    let bookings: Booking[] = [];
+    try {
+      bookings = await fetchBookings(email);
+      console.log(`[DEBUG] Fetched ${bookings.length} bookings`);
+    } catch (error) {
+      console.error('[ERROR] Failed to fetch bookings:', error);
+      // Continue with empty bookings rather than failing
+      bookings = [];
     }
 
     // Combine sessions and events
@@ -345,8 +415,12 @@ export default async function handler(
     // Filter upcoming sessions
     const upcomingSessions = allSessions
       .filter((s) => {
-        const sessionDate = new Date(s.date);
-        return sessionDate >= new Date();
+        try {
+          const sessionDate = new Date(s.date);
+          return !isNaN(sessionDate.getTime()) && sessionDate >= new Date();
+        } catch {
+          return false;
+        }
       })
       .slice(0, 10);
 
@@ -361,12 +435,18 @@ export default async function handler(
       pastBookings: bookings.slice(0, 10),
     };
 
+    console.log('[DEBUG] Returning dashboard data successfully');
     return res.status(200).json(dashboardData);
   } catch (error) {
-    console.error('Dashboard API error:', error);
+    console.error('[ERROR] Dashboard API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('[ERROR] Stack trace:', errorStack);
+    
     return res.status(500).json({
       error: 'Failed to fetch dashboard data',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      details: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
     });
   }
 }
