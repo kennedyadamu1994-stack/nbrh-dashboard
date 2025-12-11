@@ -1,12 +1,6 @@
 {
-     "buildCommand": "npm install",
-     "functions": {
-       "api/**/*.ts": {
-         "runtime": "nodejs18.x"
-       }
-     },
-     "rewrites": [
-       { "source": "/", "destination": "/index.html" },
-       { "source": "/dashboard", "destination": "/dashboard.html" }
-     ]
-   }
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" }
+  ]
+}
