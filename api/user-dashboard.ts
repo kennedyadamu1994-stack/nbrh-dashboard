@@ -32,6 +32,11 @@ interface UserProfile {
   preferredSports: string[];
   skillLevel: string;
   location: string;
+  homeBorough?: string;
+  preferredDays?: string[];
+  preferredTimes?: string[];
+  fitnessLevel?: string;
+  motivations?: string;
 }
 
 interface Session {
@@ -65,16 +70,50 @@ interface Booking {
   status: string;
 }
 
+// FIXED: SessionCard matches what frontend expects
+interface SessionCard {
+  eventID?: string;
+  title: string;
+  sport: string;
+  date: string;
+  time: string;
+  venue: string;
+  borough: string;
+  price: number;
+  difficulty: string;
+  badge?: string;
+  attendanceStatus?: string;
+  bookingID?: string;
+}
+
+// FIXED: Stats with all required fields
+interface UserStats {
+  totalBooked: number;
+  totalAttended: number;
+  totalHoursPlayed: number;
+  totalSpent: number;
+  mostPlayedSport: string | null;
+  mostCommonDay: string | null;
+}
+
+// FIXED: DashboardData matches frontend expectations
 interface DashboardData {
-  user: UserProfile;
-  stats: {
-    totalBookings: number;
-    upcomingSessions: number;
-    totalSpent: number;
+  profile: UserProfile;  // Changed from 'user'
+  stats: UserStats;
+  upcomingSessions: SessionCard[];
+  recommendations: SessionCard[];  // Changed from 'recommendedSessions'
+  pastSessions: SessionCard[];  // Changed from 'pastBookings'
+  pastSessionsTotal: number;  // Added
+}
+
+// FIXED: Proper API response wrapper
+interface APIResponse {
+  success: boolean;
+  data?: DashboardData;
+  error?: {
+    code: string;
+    message: string;
   };
-  upcomingSessions: (Session | Event)[];
-  recommendedSessions: Session[];
-  pastBookings: Booking[];
 }
 
 // Helper to find column index (case-insensitive, handles spaces)
@@ -114,7 +153,6 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
   const onboardingHeaders = rows[0];
   const onboardingRows = rows.slice(1);
 
-  // Find user in Onboarding Database (using actual column headers)
   const emailColIndex = getColumnIndex(onboardingHeaders, 'Email');
   const nameColIndex = getColumnIndex(onboardingHeaders, 'Name');
   const favouriteActivityColIndex = getColumnIndex(onboardingHeaders, 'Favourite Activity');
@@ -133,7 +171,6 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
     return null;
   }
 
-  // Parse name into first/last (simple split on first space)
   const fullName = nameColIndex !== -1 ? userRow[nameColIndex]?.toString() || '' : '';
   const nameParts = fullName.split(' ');
   const firstName = nameParts[0] || '';
@@ -146,6 +183,8 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
     preferredSports: favouriteActivityColIndex !== -1 ? [userRow[favouriteActivityColIndex]?.toString() || ''] : [],
     skillLevel: experienceLevelColIndex !== -1 ? userRow[experienceLevelColIndex]?.toString() || '' : '',
     location: homeBoroughColIndex !== -1 ? userRow[homeBoroughColIndex]?.toString() || '' : '',
+    homeBorough: homeBoroughColIndex !== -1 ? userRow[homeBoroughColIndex]?.toString() || '' : '',
+    fitnessLevel: experienceLevelColIndex !== -1 ? userRow[experienceLevelColIndex]?.toString() || '' : '',
   };
 }
 
@@ -163,7 +202,6 @@ async function fetchSessions(): Promise<Session[]> {
   const headers = rows[0];
   const dataRows = rows.slice(1);
 
-  // Using actual NBRH Sessions column headers
   const activityTypeIndex = getColumnIndex(headers, 'Activity Type');
   const classNameIndex = getColumnIndex(headers, 'Class Name');
   const dateIndex = getColumnIndex(headers, 'Date');
@@ -205,7 +243,6 @@ async function fetchEvents(): Promise<Event[]> {
   const headers = rows[0];
   const dataRows = rows.slice(1);
 
-  // Using actual NBRH Events column headers
   const eventIdIndex = getColumnIndex(headers, 'event_id');
   const eventNameIndex = getColumnIndex(headers, 'event_name');
   const dateIndex = getColumnIndex(headers, 'date');
@@ -244,7 +281,6 @@ async function fetchBookings(email: string): Promise<Booking[]> {
   const headers = rows[0];
   const dataRows = rows.slice(1);
 
-  // Using actual NBRH Bookings column headers
   const customerEmailIndex = getColumnIndex(headers, 'customer_email');
   const eventNameIndex = getColumnIndex(headers, 'event_name');
   const bookingDateIndex = getColumnIndex(headers, 'booking_date');
@@ -268,44 +304,178 @@ async function fetchBookings(email: string): Promise<Booking[]> {
     }));
 }
 
-function calculateStats(bookings: Booking[], sessions: (Session | Event)[]): DashboardData['stats'] {
-  const totalBookings = bookings.length;
-  const upcomingSessions = sessions.filter((s) => {
-    const sessionDate = new Date(s.date);
-    return sessionDate >= new Date();
-  }).length;
-
-  const totalSpent = bookings.reduce((sum, booking) => {
-    const amount = parseFloat(booking.amountPaid.replace(/[£,]/g, '')) || 0;
-    return sum + amount;
-  }, 0);
-
+// FIXED: Transform Session to SessionCard
+function transformSessionToCard(session: Session): SessionCard {
   return {
-    totalBookings,
-    upcomingSessions,
-    totalSpent: Math.round(totalSpent * 100) / 100,
+    eventID: session.id,
+    title: session.name,
+    sport: session.activityType,
+    date: session.date,
+    time: session.time,
+    venue: session.location,
+    borough: extractBorough(session.location),
+    price: parsePrice(session.price),
+    difficulty: session.difficulty || 'All levels',
   };
 }
 
+// FIXED: Transform Booking to SessionCard (needs to lookup session data ideally)
+function transformBookingToCard(booking: Booking): SessionCard {
+  return {
+    title: booking.eventName,
+    sport: 'Unknown', // This should be looked up from sessions/events
+    date: booking.bookingDate,
+    time: 'Unknown', // This should be looked up
+    venue: 'Unknown', // This should be looked up
+    borough: 'Unknown', // This should be looked up
+    price: parsePrice(booking.amountPaid),
+    difficulty: 'Unknown',
+    attendanceStatus: booking.status === 'completed' ? 'Attended' : 'No-show',
+  };
+}
+
+// Helper to extract borough from location string
+function extractBorough(location: string): string {
+  // Simple extraction - might need refinement
+  const parts = location.split(',');
+  return parts[parts.length - 1]?.trim() || 'London';
+}
+
+// Helper to parse price string to number
+function parsePrice(priceStr: string): number {
+  const cleaned = priceStr.replace(/[£,\s]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+// FIXED: Calculate all stats properly
+function calculateStats(bookings: Booking[], sessions: SessionCard[]): UserStats {
+  const totalBooked = bookings.length;
+  
+  // Calculate total attended
+  const totalAttended = bookings.filter(
+    b => b.status === 'completed' || b.status === 'attended'
+  ).length;
+
+  // Calculate total hours played (assuming 1.5 hours per session as default)
+  const totalHoursPlayed = totalAttended * 1.5;
+
+  // Calculate total spent
+  const totalSpent = bookings.reduce((sum, booking) => {
+    const amount = parsePrice(booking.amountPaid);
+    return sum + amount;
+  }, 0);
+
+  // Calculate most played sport
+  const sportCounts = new Map<string, number>();
+  sessions.forEach(session => {
+    const count = sportCounts.get(session.sport) || 0;
+    sportCounts.set(session.sport, count + 1);
+  });
+  
+  let mostPlayedSport: string | null = null;
+  let maxCount = 0;
+  sportCounts.forEach((count, sport) => {
+    if (count > maxCount) {
+      maxCount = count;
+      mostPlayedSport = sport;
+    }
+  });
+
+  // Calculate most common day
+  const dayCounts = new Map<string, number>();
+  sessions.forEach(session => {
+    try {
+      const date = new Date(session.date);
+      const dayName = date.toLocaleDateString('en-GB', { weekday: 'long' });
+      const count = dayCounts.get(dayName) || 0;
+      dayCounts.set(dayName, count + 1);
+    } catch (e) {
+      // Skip invalid dates
+    }
+  });
+
+  let mostCommonDay: string | null = null;
+  let maxDayCount = 0;
+  dayCounts.forEach((count, day) => {
+    if (count > maxDayCount) {
+      maxDayCount = count;
+      mostCommonDay = day;
+    }
+  });
+
+  return {
+    totalBooked,
+    totalAttended,
+    totalHoursPlayed: Math.round(totalHoursPlayed * 10) / 10,
+    totalSpent: Math.round(totalSpent * 100) / 100,
+    mostPlayedSport,
+    mostCommonDay,
+  };
+}
+
+// FIXED: Better recommendation logic
 function getRecommendedSessions(
   sessions: Session[],
   userProfile: UserProfile
-): Session[] {
-  // Simple recommendation: match user's preferred sports and skill level
-  const recommended = sessions
-    .filter((session) => {
-      const matchesSport = userProfile.preferredSports.some((sport) =>
-        session.activityType.toLowerCase().includes(sport.toLowerCase())
-      );
-      const matchesSkill =
-        !userProfile.skillLevel ||
-        session.difficulty.toLowerCase() === userProfile.skillLevel.toLowerCase();
-      return matchesSport || matchesSkill;
-    })
-    .slice(0, 6);
-
-  // If no matches, return first 6 sessions
-  return recommended.length > 0 ? recommended : sessions.slice(0, 6);
+): SessionCard[] {
+  const scored = sessions.map(session => {
+    let score = 0;
+    
+    // Match preferred sports (highest weight)
+    if (userProfile.preferredSports.some(sport =>
+      session.activityType.toLowerCase().includes(sport.toLowerCase())
+    )) {
+      score += 10;
+    }
+    
+    // Match skill level
+    if (userProfile.skillLevel &&
+        session.difficulty.toLowerCase() === userProfile.skillLevel.toLowerCase()) {
+      score += 5;
+    }
+    
+    // Prefer sessions with available spots
+    if (session.spotsAvailable && parseInt(session.spotsAvailable) > 0) {
+      score += 2;
+    }
+    
+    // Future sessions only
+    try {
+      const sessionDate = new Date(session.date);
+      if (sessionDate >= new Date()) {
+        score += 1;
+      } else {
+        score = -1; // Exclude past sessions
+      }
+    } catch {
+      score = -1;
+    }
+    
+    return { session, score };
+  });
+  
+  // Sort by score and take top 6
+  const recommended = scored
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map(s => transformSessionToCard(s.session));
+  
+  // If no matches, return upcoming sessions
+  if (recommended.length === 0) {
+    return sessions
+      .filter(s => {
+        try {
+          return new Date(s.date) >= new Date();
+        } catch {
+          return false;
+        }
+      })
+      .slice(0, 6)
+      .map(transformSessionToCard);
+  }
+  
+  return recommended;
 }
 
 export default async function handler(
@@ -322,17 +492,32 @@ export default async function handler(
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false,
+      error: {
+        code: 'METHOD_NOT_ALLOWED',
+        message: 'Method not allowed'
+      }
+    });
   }
 
   const email = req.query.email as string;
+  
+  // FIXED: Parse pagination params
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
 
   if (!email) {
-    return res.status(400).json({ error: 'Email parameter required' });
+    return res.status(400).json({ 
+      success: false,
+      error: {
+        code: 'MISSING_EMAIL',
+        message: 'Email parameter required'
+      }
+    });
   }
 
   try {
-    // Validate environment variables
     console.log('[DEBUG] Checking environment variables...');
     if (!SPREADSHEET_ID) {
       throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID is missing');
@@ -341,7 +526,6 @@ export default async function handler(
       throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is missing');
     }
     
-    // Test parsing credentials
     try {
       getServiceAccountCredentials();
     } catch (error) {
@@ -350,22 +534,23 @@ export default async function handler(
     
     console.log('[DEBUG] Environment variables OK');
 
-    // Fetch all data with individual error handling
+    // Fetch user profile
     console.log('[DEBUG] Fetching user profile...');
-    let userProfile: UserProfile | null = null;
-    try {
-      userProfile = await fetchUserProfile(email);
-    } catch (error) {
-      console.error('[ERROR] Failed to fetch user profile:', error);
-      throw new Error(`User profile fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    const userProfile = await fetchUserProfile(email);
 
     if (!userProfile) {
       console.log('[DEBUG] User not found:', email);
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      });
     }
     console.log('[DEBUG] User profile fetched:', userProfile.email);
 
+    // Fetch all data
     console.log('[DEBUG] Fetching sessions...');
     let sessions: Session[] = [];
     try {
@@ -373,7 +558,6 @@ export default async function handler(
       console.log(`[DEBUG] Fetched ${sessions.length} sessions`);
     } catch (error) {
       console.error('[ERROR] Failed to fetch sessions:', error);
-      // Continue with empty sessions rather than failing
       sessions = [];
     }
 
@@ -384,7 +568,6 @@ export default async function handler(
       console.log(`[DEBUG] Fetched ${events.length} events`);
     } catch (error) {
       console.error('[ERROR] Failed to fetch events:', error);
-      // Continue with empty events rather than failing
       events = [];
     }
 
@@ -395,25 +578,14 @@ export default async function handler(
       console.log(`[DEBUG] Fetched ${bookings.length} bookings`);
     } catch (error) {
       console.error('[ERROR] Failed to fetch bookings:', error);
-      // Continue with empty bookings rather than failing
       bookings = [];
     }
 
-    // Combine sessions and events
-    const allSessions = [
-      ...sessions.map(s => ({ ...s, type: 'session' })),
-      ...events.map(e => ({ 
-        ...e, 
-        type: 'event',
-        activityType: '',
-        name: e.name,
-        spotsAvailable: e.spotsRemaining,
-        difficulty: ''
-      }))
-    ];
+    // Transform sessions to cards
+    const sessionCards = sessions.map(transformSessionToCard);
 
     // Filter upcoming sessions
-    const upcomingSessions = allSessions
+    const upcomingSessions = sessionCards
       .filter((s) => {
         try {
           const sessionDate = new Date(s.date);
@@ -424,19 +596,39 @@ export default async function handler(
       })
       .slice(0, 10);
 
-    const stats = calculateStats(bookings, allSessions);
-    const recommendedSessions = getRecommendedSessions(sessions, userProfile);
+    // Get recommendations
+    const recommendations = getRecommendedSessions(sessions, userProfile);
 
+    // FIXED: Apply pagination to past bookings
+    const totalBookings = bookings.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedBookings = bookings.slice(start, end);
+    
+    // Transform bookings to session cards
+    const pastSessions = paginatedBookings.map(transformBookingToCard);
+
+    // Calculate stats with all fields
+    const stats = calculateStats(bookings, sessionCards);
+
+    // FIXED: Return properly formatted response
     const dashboardData: DashboardData = {
-      user: userProfile,
+      profile: userProfile,  // Changed from 'user'
       stats,
       upcomingSessions,
-      recommendedSessions,
-      pastBookings: bookings.slice(0, 10),
+      recommendations,  // Changed from 'recommendedSessions'
+      pastSessions,  // Changed from 'pastBookings'
+      pastSessionsTotal: totalBookings,  // Added
     };
 
     console.log('[DEBUG] Returning dashboard data successfully');
-    return res.status(200).json(dashboardData);
+    
+    // FIXED: Wrap in API response format
+    return res.status(200).json({
+      success: true,
+      data: dashboardData
+    } as APIResponse);
+    
   } catch (error) {
     console.error('[ERROR] Dashboard API error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -444,9 +636,11 @@ export default async function handler(
     console.error('[ERROR] Stack trace:', errorStack);
     
     return res.status(500).json({
-      error: 'Failed to fetch dashboard data',
-      details: errorMessage,
-      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
-    });
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: errorMessage
+      }
+    } as APIResponse);
   }
 }
