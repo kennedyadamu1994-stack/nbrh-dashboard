@@ -241,12 +241,20 @@
       background: #48bb78;
     }
 
+    .session-badge.tomorrow {
+      background: #4299e1;
+    }
+
     .session-badge.attended {
       background: #48bb78;
     }
 
     .session-badge.no-show {
       background: #f56565;
+    }
+
+    .session-badge.pending {
+      background: #ed8936;
     }
 
     .session-details {
@@ -648,7 +656,7 @@
           </div>
           <div class="session-footer">
             <div class="session-price">£${session.price.toFixed(2)}</div>
-            <div class="session-difficulty">${session.difficulty}</div>
+            ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
         </div>
       `).join('');
@@ -693,16 +701,13 @@
           </div>
           <div class="session-footer">
             <div class="session-price">£${rec.price.toFixed(2)}</div>
-            <div class="session-difficulty">${rec.difficulty}</div>
+            ${rec.difficulty ? `<div class="session-difficulty">${rec.difficulty}</div>` : ''}
           </div>
-          <div class="recommendation-reason">${rec.reason}</div>
+          ${rec.reason ? `<div class="recommendation-reason">${rec.reason}</div>` : ''}
         </div>
       `).join('');
 
       recommendationsGrid.innerHTML = recommendationsHTML;
-
-      // Stub for analytics
-      // trackEvent('recommendations_viewed', { count: recommendations.length });
     }
 
     function renderPast(sessions, total) {
@@ -747,7 +752,7 @@
           </div>
           <div class="session-footer">
             <div class="session-price">£${session.price.toFixed(2)}</div>
-            <div class="session-difficulty">${session.difficulty}</div>
+            ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
         </div>
       `).join('');
@@ -839,9 +844,6 @@
       
       // Scroll to past sessions
       document.querySelector('#pastGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // Stub for analytics
-      // trackEvent('pagination_changed', { page: newPage });
     }
 
     // ==========================================
@@ -860,21 +862,6 @@
     function logout() {
       localStorage.removeItem('nbrhEmail');
       window.location.href = '/index.html';
-    }
-
-    // ==========================================
-    // ANALYTICS STUB
-    // ==========================================
-
-    function trackEvent(eventName, properties = {}) {
-      // Placeholder for future analytics integration
-      console.log('[Analytics]', eventName, properties);
-      
-      // Example integration points:
-      // - User clicks recommendation
-      // - User changes pagination
-      // - User lands on dashboard
-      // - User logs out
     }
   </script>
 </body>
