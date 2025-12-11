@@ -520,6 +520,8 @@
         );
 
         const result = await response.json();
+        
+        console.log('[DEBUG] API Response:', result);
 
         if (!result.success) {
           throw new Error(result.error?.message || 'Failed to load dashboard');
@@ -532,7 +534,7 @@
       } catch (error) {
         console.error('Dashboard load error:', error);
         state.loading = false;
-        state.error = error.message;
+        state.error = error.message || 'An unknown error occurred';
         updateUI();
       }
     }
@@ -584,22 +586,27 @@
     function renderStats(stats) {
       const statsGrid = document.getElementById('statsGrid');
       
+      if (!stats) {
+        statsGrid.innerHTML = '<div class="empty-state"><p>Unable to load stats</p></div>';
+        return;
+      }
+      
       const statsHTML = `
         <div class="stat-card">
           <div class="stat-label">Total Booked</div>
-          <div class="stat-value">${stats.totalBooked}</div>
+          <div class="stat-value">${stats.totalBooked || 0}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Sessions Attended</div>
-          <div class="stat-value">${stats.totalAttended}</div>
+          <div class="stat-value">${stats.totalAttended || 0}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Hours Played</div>
-          <div class="stat-value">${stats.totalHoursPlayed}h</div>
+          <div class="stat-value">${stats.totalHoursPlayed || 0}h</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Total Spent</div>
-          <div class="stat-value">£${stats.totalSpent.toFixed(2)}</div>
+          <div class="stat-value">£${(stats.totalSpent || 0).toFixed(2)}</div>
         </div>
         ${stats.mostPlayedSport ? `
         <div class="stat-card">
@@ -621,7 +628,7 @@
     function renderUpcoming(sessions) {
       const upcomingGrid = document.getElementById('upcomingGrid');
 
-      if (sessions.length === 0) {
+      if (!sessions || sessions.length === 0) {
         upcomingGrid.innerHTML = `
           <div class="empty-state">
             <h3>No upcoming sessions</h3>
@@ -814,15 +821,15 @@
         </div>
         <div class="profile-item">
           <div class="profile-label">Preferred Sports</div>
-          <div class="profile-value">${profile.preferredSports.join(', ') || 'Not specified'}</div>
+          <div class="profile-value">${(profile.preferredSports && profile.preferredSports.length > 0) ? profile.preferredSports.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
           <div class="profile-label">Preferred Days</div>
-          <div class="profile-value">${profile.preferredDays.join(', ') || 'Not specified'}</div>
+          <div class="profile-value">${(profile.preferredDays && profile.preferredDays.length > 0) ? profile.preferredDays.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
           <div class="profile-label">Preferred Times</div>
-          <div class="profile-value">${profile.preferredTimes.join(', ') || 'Not specified'}</div>
+          <div class="profile-value">${(profile.preferredTimes && profile.preferredTimes.length > 0) ? profile.preferredTimes.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
           <div class="profile-label">Motivations</div>
