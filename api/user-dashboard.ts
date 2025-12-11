@@ -37,6 +37,7 @@ interface Event {
   active: string;
   attendeesUrl: string;
   attendeesPublicUrl: string;
+  imageUrl: string;
 }
 
 interface Booking {
@@ -67,6 +68,7 @@ interface SessionCard {
   bookingID: string;
   attendanceStatus?: string;
   attendeeUrl?: string;
+  image?: string;
 }
 
 interface RecommendationCard {
@@ -82,6 +84,7 @@ interface RecommendationCard {
   score: number;
   reason: string;
   attendeeUrl?: string;
+  image?: string;
 }
 
 interface UserStats {
@@ -315,6 +318,7 @@ async function fetchEvents(): Promise<Event[]> {
   const activeIdx = getColumnIndex(headers, 'active');
   const attendeesUrlIdx = getColumnIndex(headers, 'attendees_url');
   const attendeesPublicUrlIdx = getColumnIndex(headers, 'attendees_public_url');
+  const imageUrlIdx = getColumnIndex(headers, 'Image URL');
 
   const events: Event[] = [];
 
@@ -336,6 +340,7 @@ async function fetchEvents(): Promise<Event[]> {
       active: activeIdx !== -1 ? row[activeIdx]?.toString() || 'TRUE' : 'TRUE',
       attendeesUrl: attendeesUrlIdx !== -1 ? row[attendeesUrlIdx]?.toString() || '' : '',
       attendeesPublicUrl: attendeesPublicUrlIdx !== -1 ? row[attendeesPublicUrlIdx]?.toString() || '' : '',
+      imageUrl: imageUrlIdx !== -1 ? row[imageUrlIdx]?.toString() || '' : '',
     };
 
     events.push(event);
@@ -415,6 +420,9 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
   
   // Prefer public URL over regular attendees URL
   const attendeeUrl = event?.attendeesPublicUrl || event?.attendeesUrl || '';
+  
+  // Get image URL from event
+  const image = event?.imageUrl || '';
 
   return {
     eventID: booking.eventID,
@@ -430,6 +438,7 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
     bookingID: booking.bookingID,
     attendanceStatus: isPast ? booking.status : undefined,
     attendeeUrl,
+    image,
   };
 }
 
@@ -655,6 +664,7 @@ function generateRecommendations(
       score,
       reason,
       attendeeUrl: event.attendeesPublicUrl || event.attendeesUrl || '',
+      image: event.imageUrl || '',
     };
   });
 
