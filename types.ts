@@ -5,7 +5,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   homeBorough: string;
-  preferredSports: string[]; // parsed from comma-separated
+  preferredSports: string[];
   preferredDays: string[];
   preferredTimes: string[];
   fitnessLevel: string;
@@ -81,7 +81,6 @@ export interface UserStats {
   totalSpent: number;
   mostPlayedSport: string | null;
   mostCommonDay: string | null;
-  weeklyConsistency: number;
 }
 
 export interface DashboardResponse {
