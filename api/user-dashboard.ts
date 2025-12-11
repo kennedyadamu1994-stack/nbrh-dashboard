@@ -35,6 +35,8 @@ interface Event {
   bookingUrl: string;
   durationMinutes: number;
   active: string;
+  attendeesUrl: string;
+  attendeesPublicUrl: string;
 }
 
 interface Booking {
@@ -64,6 +66,7 @@ interface SessionCard {
   difficulty: string;
   bookingID: string;
   attendanceStatus?: string;
+  attendeeUrl?: string;
 }
 
 interface RecommendationCard {
@@ -78,6 +81,7 @@ interface RecommendationCard {
   difficulty: string;
   score: number;
   reason: string;
+  attendeeUrl?: string;
 }
 
 interface UserStats {
@@ -176,13 +180,47 @@ function getDayOfWeek(date: string): string | null {
 
 function extractBorough(location: string): string {
   // Try to extract borough from location string
-  // Typical format might be "Venue Name, Borough" or just "Borough"
   if (!location) return '';
-  const parts = location.split(',');
-  if (parts.length > 1) {
-    return parts[parts.length - 1].trim();
+  
+  // Common London boroughs to look for
+  const londonBoroughs = [
+    'Westminster', 'Camden', 'Islington', 'Hackney', 'Tower Hamlets', 'Greenwich',
+    'Lewisham', 'Southwark', 'Lambeth', 'Wandsworth', 'Hammersmith', 'Fulham',
+    'Kensington', 'Chelsea', 'Brent', 'Ealing', 'Hounslow', 'Richmond', 'Kingston',
+    'Merton', 'Sutton', 'Croydon', 'Bromley', 'Bexley', 'Havering', 'Barking',
+    'Dagenham', 'Redbridge', 'Newham', 'Waltham Forest', 'Haringey', 'Enfield',
+    'Barnet', 'Harrow', 'Hillingdon'
+  ];
+  
+  // First, check if any borough name appears in the location
+  const locationLower = location.toLowerCase();
+  for (const borough of londonBoroughs) {
+    if (locationLower.includes(borough.toLowerCase())) {
+      return borough;
+    }
   }
-  return location.trim();
+  
+  // Fallback: split by comma and try to find a meaningful part
+  // Typically: "Venue, Borough, Postcode, Country"
+  const parts = location.split(',').map(p => p.trim());
+  
+  // Avoid returning UK, England, London, or postcodes
+  const meaningfulParts = parts.filter(part => {
+    const partLower = part.toLowerCase();
+    return !partLower.includes('uk') && 
+           !partLower.includes('england') &&
+           part !== 'London' &&
+           !/ (UK|N1|N2|N3|N4|N5|N6|N7|N8|N9|N10|SW1|SW2|SW3|SE1|SE2|SE3|E1|E2|E3|W1|W2|W3|NW1|NW2)/.test(part);
+  });
+  
+  // Return the second-to-last meaningful part, or last, or first
+  if (meaningfulParts.length >= 2) {
+    return meaningfulParts[meaningfulParts.length - 2];
+  } else if (meaningfulParts.length === 1) {
+    return meaningfulParts[0];
+  }
+  
+  return parts[0] || '';
 }
 
 // ==========================================
@@ -275,6 +313,8 @@ async function fetchEvents(): Promise<Event[]> {
   const bookingUrlIdx = getColumnIndex(headers, 'booking_url');
   const durationIdx = getColumnIndex(headers, 'Duration Minutes');
   const activeIdx = getColumnIndex(headers, 'active');
+  const attendeesUrlIdx = getColumnIndex(headers, 'attendees_url');
+  const attendeesPublicUrlIdx = getColumnIndex(headers, 'attendees_public_url');
 
   const events: Event[] = [];
 
@@ -294,6 +334,8 @@ async function fetchEvents(): Promise<Event[]> {
       bookingUrl: bookingUrlIdx !== -1 ? row[bookingUrlIdx]?.toString() || '' : '',
       durationMinutes: durationIdx !== -1 ? parseInt(row[durationIdx]?.toString() || '60') : 60,
       active: activeIdx !== -1 ? row[activeIdx]?.toString() || 'TRUE' : 'TRUE',
+      attendeesUrl: attendeesUrlIdx !== -1 ? row[attendeesUrlIdx]?.toString() || '' : '',
+      attendeesPublicUrl: attendeesPublicUrlIdx !== -1 ? row[attendeesPublicUrlIdx]?.toString() || '' : '',
     };
 
     events.push(event);
@@ -370,6 +412,9 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
   const location = event?.location || booking.eventLocation;
   const price = event?.price || parsePrice(booking.amountPaid);
   const category = event?.category || '';
+  
+  // Prefer public URL over regular attendees URL
+  const attendeeUrl = event?.attendeesPublicUrl || event?.attendeesUrl || '';
 
   return {
     eventID: booking.eventID,
@@ -384,6 +429,7 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
     difficulty: booking.skillLevel || '',
     bookingID: booking.bookingID,
     attendanceStatus: isPast ? booking.status : undefined,
+    attendeeUrl,
   };
 }
 
@@ -399,12 +445,24 @@ function separateSessions(
 
   const upcoming: SessionCard[] = [];
   const past: SessionCard[] = [];
+  const seenBookingIds = new Set<string>(); // Track to avoid duplicates
+
+  console.log(`[DEBUG] Processing ${bookings.length} bookings`);
 
   for (const booking of bookings) {
+    // Skip duplicate booking IDs
+    if (seenBookingIds.has(booking.bookingID)) {
+      console.log(`[DEBUG] Skipping duplicate booking: ${booking.bookingID}`);
+      continue;
+    }
+    seenBookingIds.add(booking.bookingID);
+
     const event = eventMap.get(booking.eventID);
     const eventDate = new Date(event?.date || booking.eventDate);
     eventDate.setHours(0, 0, 0, 0);
     const isPast = eventDate < now;
+
+    console.log(`[DEBUG] Booking ${booking.bookingID}: ${booking.eventName} on ${eventDate.toISOString()} - ${isPast ? 'PAST' : 'UPCOMING'}`);
 
     const card = createSessionCardFromBooking(booking, event, isPast);
 
@@ -425,6 +483,8 @@ function separateSessions(
   const start = (page - 1) * pageSize;
   const paginatedPast = past.slice(start, start + pageSize);
 
+  console.log(`[DEBUG] Result: ${upcoming.length} upcoming, ${pastTotal} past`);
+
   return {
     upcoming,
     past: paginatedPast,
@@ -439,17 +499,53 @@ function separateSessions(
 function calculateStats(bookings: Booking[], events: Event[]): UserStats {
   const eventMap = new Map(events.map(e => [e.eventID, e]));
   
-  // Count attended sessions (status = "Confirmed" or similar)
+  console.log(`[DEBUG] Calculating stats for ${bookings.length} bookings`);
+  
+  // Count attended sessions - check for explicit attendance indicators
+  // Status values might be: "Attended", "Confirmed", "Completed", "No-show", "Cancelled"
   const attended = bookings.filter(b => {
     const eventDate = new Date(b.eventDate);
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    return eventDate < now && b.status.toLowerCase() !== 'cancelled';
+    
+    // Event must be in the past
+    if (eventDate >= now) {
+      console.log(`[DEBUG] ${b.eventName}: Future event, not counted as attended`);
+      return false;
+    }
+    
+    const status = b.status.toLowerCase();
+    console.log(`[DEBUG] ${b.eventName}: Past event with status "${status}"`);
+    
+    // Explicitly attended
+    if (status.includes('attended') || status.includes('completed')) return true;
+    
+    // For "Confirmed" status, assume attended if event is in the past
+    if (status.includes('confirmed')) return true;
+    
+    // Exclude cancellations and no-shows
+    if (status.includes('cancelled') || status.includes('cancel') || 
+        status.includes('no-show') || status.includes('noshow')) return false;
+    
+    // Default: if past and not cancelled, consider attended
+    return true;
   });
 
+  console.log(`[DEBUG] Attended sessions: ${attended.length}`);
+
   const totalSpent = bookings.reduce((sum, b) => {
-    return sum + parsePrice(b.amountPaid);
+    const status = b.status.toLowerCase();
+    // Only count non-cancelled bookings in total spent
+    if (status.includes('cancelled') || status.includes('cancel')) {
+      console.log(`[DEBUG] Excluding cancelled booking from total: ${b.eventName}`);
+      return sum;
+    }
+    const amount = parsePrice(b.amountPaid);
+    console.log(`[DEBUG] Adding £${amount} from ${b.eventName}`);
+    return sum + amount;
   }, 0);
+
+  console.log(`[DEBUG] Total spent: £${totalSpent}`);
 
   let totalMinutes = 0;
   const sportCounts = new Map<string, number>();
@@ -458,10 +554,15 @@ function calculateStats(bookings: Booking[], events: Event[]): UserStats {
   for (const booking of attended) {
     const event = eventMap.get(booking.eventID);
     if (event) {
+      console.log(`[DEBUG] Adding ${event.durationMinutes} minutes for ${event.eventName}`);
       totalMinutes += event.durationMinutes;
       if (event.category) {
         sportCounts.set(event.category, (sportCounts.get(event.category) || 0) + 1);
       }
+    } else {
+      // If event not found, try to estimate duration (default 90 minutes)
+      console.log(`[DEBUG] Event not found for ${booking.eventName}, using default 90 minutes`);
+      totalMinutes += 90;
     }
 
     const day = getDayOfWeek(booking.eventDate);
@@ -470,6 +571,8 @@ function calculateStats(bookings: Booking[], events: Event[]): UserStats {
     }
   }
 
+  console.log(`[DEBUG] Total minutes: ${totalMinutes}, hours: ${totalMinutes / 60}`);
+
   const mostPlayedSport = sportCounts.size > 0
     ? Array.from(sportCounts.entries()).sort((a, b) => b[1] - a[1])[0][0]
     : null;
@@ -477,6 +580,8 @@ function calculateStats(bookings: Booking[], events: Event[]): UserStats {
   const mostCommonDay = dayCounts.size > 0
     ? Array.from(dayCounts.entries()).sort((a, b) => b[1] - a[1])[0][0]
     : null;
+
+  console.log(`[DEBUG] Most played sport: ${mostPlayedSport}, Most common day: ${mostCommonDay}`);
 
   return {
     totalBooked: bookings.length,
@@ -549,6 +654,7 @@ function generateRecommendations(
       difficulty: '',
       score,
       reason,
+      attendeeUrl: event.attendeesPublicUrl || event.attendeesUrl || '',
     };
   });
 
