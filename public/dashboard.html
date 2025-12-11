@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My NBRH Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f7fafc;
+      color: #2d3748;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Main container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .spinner {
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Error state */
+    .error-state {
+      background: #fff5f5;
+      border: 2px solid #fc8181;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      display: none;
+    }
+
+    .error-state.show {
+      display: block;
+    }
+
+    .error-state h2 {
+      color: #c53030;
+      margin-bottom: 12px;
+    }
+
+    .error-state p {
+      color: #742a2a;
+      margin-bottom: 16px;
+    }
+
+    .retry-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .retry-btn:hover {
+      background: #5568d3;
+    }
+
+    /* Dashboard content */
+    .dashboard {
+      display: none;
+    }
+
+    .dashboard.show {
+      display: block;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid #667eea;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    /* Section */
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: #718096;
+      margin-top: 4px;
+    }
+
+    /* Session cards */
+    .session-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .session-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+
+    .session-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .session-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+
+    .session-sport {
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    .session-badge {
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .session-badge.today {
+      background: #48bb78;
+    }
+
+    .session-badge.attended {
+      background: #48bb78;
+    }
+
+    .session-badge.no-show {
+      background: #f56565;
+    }
+
+    .session-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+
+    .session-detail {
+      display: flex;
+      align-items: center;
+    }
+
+    .session-detail strong {
+      margin-right: 6px;
+    }
+
+    .session-footer {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .session-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .session-difficulty {
+      font-size: 12px;
+      color: #718096;
+      background: #edf2f7;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    /* Recommendation reason */
+    .recommendation-reason {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #718096;
+      font-style: italic;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #718096;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #4a5568;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .pagination button:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: #5568d3;
+    }
+
+    .pagination-info {
+      font-size: 14px;
+      color: #4a5568;
+    }
+
+    /* Profile section */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .profile-item {
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 6px;
+    }
+
+    .profile-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .profile-value {
+      font-size: 15px;
+      color: #2d3748;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .session-details {
+        grid-template-columns: 1fr;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <h1 id="greeting">My NBRH</h1>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Loading State -->
+    <div class="loading" id="loadingState">
+      <div class="spinner"></div>
+      <p>Loading your dashboard...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="errorState">
+      <h2>Oops! Something went wrong</h2>
+      <p id="errorMessage">Unable to load your dashboard. Please try again.</p>
+      <button class="retry-btn" id="retryBtn">Retry</button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard" id="dashboardContent">
+      <!-- Stats Section -->
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <!-- Upcoming Sessions -->
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Upcoming Sessions</h2>
+            <p class="section-subtitle">Your booked sessions</p>
+          </div>
+        </div>
+        <div class="session-grid" id="upcomingGrid"></div>
+      </section>
+
+      <!-- Recommendations -->
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Recommended for You</h2>
+            <p class="section-subtitle">Based on your preferences and history</p>
+          </div>
+        </div>
+        <div class="session-grid" id="recommendationsGrid"></div>
+      </section>
+
+      <!-- Past Sessions -->
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Past Sessions</h2>
+            <p class="section-subtitle">Your session history</p>
+          </div>
+        </div>
+        <div class="session-grid" id="pastGrid"></div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+
+      <!-- Profile -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Your Profile</h2>
+        </div>
+        <div class="profile-grid" id="profileGrid"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ==========================================
+    // STATE MANAGEMENT
+    // ==========================================
+    
+    const state = {
+      loading: true,
+      error: null,
+      data: null,
+      currentPage: 1,
+      pageSize: 10,
+    };
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const email = localStorage.getItem('nbrhEmail');
+      
+      if (!email) {
+        // No email stored, redirect to login
+        window.location.href = '/index.html';
+        return;
+      }
+
+      // Load dashboard
+      loadDashboard(email);
+
+      // Setup logout button
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      
+      // Setup retry button
+      document.getElementById('retryBtn').addEventListener('click', () => {
+        loadDashboard(email);
+      });
+    });
+
+    // ==========================================
+    // API CALL
+    // ==========================================
+
+    async function loadDashboard(email) {
+      try {
+        state.loading = true;
+        state.error = null;
+        updateUI();
+
+        const response = await fetch(
+          `/api/user-dashboard?email=${encodeURIComponent(email)}&page=${state.currentPage}&pageSize=${state.pageSize}`
+        );
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to load dashboard');
+        }
+
+        state.data = result.data;
+        state.loading = false;
+        updateUI();
+
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+        state.loading = false;
+        state.error = error.message;
+        updateUI();
+      }
+    }
+
+    // ==========================================
+    // UI RENDERING
+    // ==========================================
+
+    function updateUI() {
+      const loadingState = document.getElementById('loadingState');
+      const errorState = document.getElementById('errorState');
+      const dashboardContent = document.getElementById('dashboardContent');
+
+      if (state.loading) {
+        loadingState.style.display = 'block';
+        errorState.classList.remove('show');
+        dashboardContent.classList.remove('show');
+        return;
+      }
+
+      if (state.error) {
+        loadingState.style.display = 'none';
+        errorState.classList.add('show');
+        dashboardContent.classList.remove('show');
+        document.getElementById('errorMessage').textContent = state.error;
+        return;
+      }
+
+      if (state.data) {
+        loadingState.style.display = 'none';
+        errorState.classList.remove('show');
+        dashboardContent.classList.add('show');
+        
+        renderHeader(state.data.profile);
+        renderStats(state.data.stats);
+        renderUpcoming(state.data.upcomingSessions);
+        renderRecommendations(state.data.recommendations);
+        renderPast(state.data.pastSessions, state.data.pastSessionsTotal);
+        renderProfile(state.data.profile);
+      }
+    }
+
+    function renderHeader(profile) {
+      const greeting = document.getElementById('greeting');
+      const name = profile?.firstName || 'Welcome';
+      greeting.textContent = `Hi ${name}!`;
+    }
+
+    function renderStats(stats) {
+      const statsGrid = document.getElementById('statsGrid');
+      
+      const statsHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Total Booked</div>
+          <div class="stat-value">${stats.totalBooked}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sessions Attended</div>
+          <div class="stat-value">${stats.totalAttended}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Hours Played</div>
+          <div class="stat-value">${stats.totalHoursPlayed}h</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Spent</div>
+          <div class="stat-value">£${stats.totalSpent.toFixed(2)}</div>
+        </div>
+        ${stats.mostPlayedSport ? `
+        <div class="stat-card">
+          <div class="stat-label">Favorite Sport</div>
+          <div class="stat-value" style="font-size: 18px;">${stats.mostPlayedSport}</div>
+        </div>
+        ` : ''}
+        ${stats.mostCommonDay ? `
+        <div class="stat-card">
+          <div class="stat-label">Usual Day</div>
+          <div class="stat-value" style="font-size: 18px;">${stats.mostCommonDay}</div>
+        </div>
+        ` : ''}
+      `;
+
+      statsGrid.innerHTML = statsHTML;
+    }
+
+    function renderUpcoming(sessions) {
+      const upcomingGrid = document.getElementById('upcomingGrid');
+
+      if (sessions.length === 0) {
+        upcomingGrid.innerHTML = `
+          <div class="empty-state">
+            <h3>No upcoming sessions</h3>
+            <p>Check out our recommendations below!</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sessionsHTML = sessions.map(session => `
+        <div class="session-card">
+          <div class="session-header">
+            <div>
+              <div class="session-title">${session.title}</div>
+              <div class="session-sport">${session.sport}</div>
+            </div>
+            ${session.badge ? `<span class="session-badge ${session.badge.toLowerCase().replace(/\s+/g, '-')}">${session.badge}</span>` : ''}
+          </div>
+          <div class="session-details">
+            <div class="session-detail">
+              <strong>📅</strong> ${formatDate(session.date)}
+            </div>
+            <div class="session-detail">
+              <strong>🕐</strong> ${session.time}
+            </div>
+            <div class="session-detail">
+              <strong>📍</strong> ${session.venue}
+            </div>
+            <div class="session-detail">
+              <strong>🏙️</strong> ${session.borough}
+            </div>
+          </div>
+          <div class="session-footer">
+            <div class="session-price">£${session.price.toFixed(2)}</div>
+            <div class="session-difficulty">${session.difficulty}</div>
+          </div>
+        </div>
+      `).join('');
+
+      upcomingGrid.innerHTML = sessionsHTML;
+    }
+
+    function renderRecommendations(recommendations) {
+      const recommendationsGrid = document.getElementById('recommendationsGrid');
+
+      if (recommendations.length === 0) {
+        recommendationsGrid.innerHTML = `
+          <div class="empty-state">
+            <h3>No recommendations available</h3>
+            <p>Book more sessions to get personalized suggestions!</p>
+          </div>
+        `;
+        return;
+      }
+
+      const recommendationsHTML = recommendations.map(rec => `
+        <div class="session-card">
+          <div class="session-header">
+            <div>
+              <div class="session-title">${rec.title}</div>
+              <div class="session-sport">${rec.sport}</div>
+            </div>
+          </div>
+          <div class="session-details">
+            <div class="session-detail">
+              <strong>📅</strong> ${formatDate(rec.date)}
+            </div>
+            <div class="session-detail">
+              <strong>🕐</strong> ${rec.time}
+            </div>
+            <div class="session-detail">
+              <strong>📍</strong> ${rec.venue}
+            </div>
+            <div class="session-detail">
+              <strong>🏙️</strong> ${rec.borough}
+            </div>
+          </div>
+          <div class="session-footer">
+            <div class="session-price">£${rec.price.toFixed(2)}</div>
+            <div class="session-difficulty">${rec.difficulty}</div>
+          </div>
+          <div class="recommendation-reason">${rec.reason}</div>
+        </div>
+      `).join('');
+
+      recommendationsGrid.innerHTML = recommendationsHTML;
+
+      // Stub for analytics
+      // trackEvent('recommendations_viewed', { count: recommendations.length });
+    }
+
+    function renderPast(sessions, total) {
+      const pastGrid = document.getElementById('pastGrid');
+      const pagination = document.getElementById('pagination');
+
+      if (total === 0) {
+        pastGrid.innerHTML = `
+          <div class="empty-state">
+            <h3>No past sessions yet</h3>
+            <p>Your session history will appear here after you attend events.</p>
+          </div>
+        `;
+        pagination.innerHTML = '';
+        return;
+      }
+
+      const sessionsHTML = sessions.map(session => `
+        <div class="session-card">
+          <div class="session-header">
+            <div>
+              <div class="session-title">${session.title}</div>
+              <div class="session-sport">${session.sport}</div>
+            </div>
+            ${session.attendanceStatus ? `
+              <span class="session-badge ${session.attendanceStatus.toLowerCase().replace('-', '')}">${session.attendanceStatus}</span>
+            ` : ''}
+          </div>
+          <div class="session-details">
+            <div class="session-detail">
+              <strong>📅</strong> ${formatDate(session.date)}
+            </div>
+            <div class="session-detail">
+              <strong>🕐</strong> ${session.time}
+            </div>
+            <div class="session-detail">
+              <strong>📍</strong> ${session.venue}
+            </div>
+            <div class="session-detail">
+              <strong>🏙️</strong> ${session.borough}
+            </div>
+          </div>
+          <div class="session-footer">
+            <div class="session-price">£${session.price.toFixed(2)}</div>
+            <div class="session-difficulty">${session.difficulty}</div>
+          </div>
+        </div>
+      `).join('');
+
+      pastGrid.innerHTML = sessionsHTML;
+
+      // Render pagination
+      const totalPages = Math.ceil(total / state.pageSize);
+      const paginationHTML = `
+        <button 
+          ${state.currentPage === 1 ? 'disabled' : ''} 
+          onclick="changePage(${state.currentPage - 1})"
+        >
+          Previous
+        </button>
+        <span class="pagination-info">
+          Page ${state.currentPage} of ${totalPages} (${total} total)
+        </span>
+        <button 
+          ${state.currentPage === totalPages ? 'disabled' : ''} 
+          onclick="changePage(${state.currentPage + 1})"
+        >
+          Next
+        </button>
+      `;
+
+      pagination.innerHTML = paginationHTML;
+    }
+
+    function renderProfile(profile) {
+      const profileGrid = document.getElementById('profileGrid');
+
+      if (!profile) {
+        profileGrid.innerHTML = `
+          <div class="empty-state">
+            <h3>Profile not found</h3>
+            <p>Complete your onboarding to see your profile here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const profileHTML = `
+        <div class="profile-item">
+          <div class="profile-label">Name</div>
+          <div class="profile-value">${profile.firstName} ${profile.lastName}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Email</div>
+          <div class="profile-value">${profile.email}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Home Borough</div>
+          <div class="profile-value">${profile.homeBorough || 'Not specified'}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Fitness Level</div>
+          <div class="profile-value">${profile.fitnessLevel || 'Not specified'}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Preferred Sports</div>
+          <div class="profile-value">${profile.preferredSports.join(', ') || 'Not specified'}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Preferred Days</div>
+          <div class="profile-value">${profile.preferredDays.join(', ') || 'Not specified'}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Preferred Times</div>
+          <div class="profile-value">${profile.preferredTimes.join(', ') || 'Not specified'}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Motivations</div>
+          <div class="profile-value">${profile.motivations || 'Not specified'}</div>
+        </div>
+      `;
+
+      profileGrid.innerHTML = profileHTML;
+    }
+
+    // ==========================================
+    // PAGINATION
+    // ==========================================
+
+    function changePage(newPage) {
+      state.currentPage = newPage;
+      const email = localStorage.getItem('nbrhEmail');
+      loadDashboard(email);
+      
+      // Scroll to past sessions
+      document.querySelector('#pastGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Stub for analytics
+      // trackEvent('pagination_changed', { page: newPage });
+    }
+
+    // ==========================================
+    // UTILITY FUNCTIONS
+    // ==========================================
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'short' 
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('nbrhEmail');
+      window.location.href = '/index.html';
+    }
+
+    // ==========================================
+    // ANALYTICS STUB
+    // ==========================================
+
+    function trackEvent(eventName, properties = {}) {
+      // Placeholder for future analytics integration
+      console.log('[Analytics]', eventName, properties);
+      
+      // Example integration points:
+      // - User clicks recommendation
+      // - User changes pagination
+      // - User lands on dashboard
+      // - User logs out
+    }
+  </script>
+</body>
+</html>
