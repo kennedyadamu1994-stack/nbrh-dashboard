@@ -305,6 +305,23 @@
       font-style: italic;
     }
 
+    /* Attendee link */
+    .attendee-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .attendee-link:hover {
+      color: #5568d3;
+      text-decoration: underline;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -665,6 +682,19 @@
             <div class="session-price">£${session.price.toFixed(2)}</div>
             ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
+          ${session.attendeeUrl ? `
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
+               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+              <span>👥</span> View Attendees
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+          ` : ''}
         </div>
       `).join('');
 
@@ -711,6 +741,19 @@
             ${rec.difficulty ? `<div class="session-difficulty">${rec.difficulty}</div>` : ''}
           </div>
           ${rec.reason ? `<div class="recommendation-reason">${rec.reason}</div>` : ''}
+          ${rec.attendeeUrl ? `
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <a href="${rec.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
+               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+              <span>👥</span> View Event Details
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+          ` : ''}
         </div>
       `).join('');
 
@@ -761,6 +804,19 @@
             <div class="session-price">£${session.price.toFixed(2)}</div>
             ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
           </div>
+          ${session.attendeeUrl ? `
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <a href="${session.attendeeUrl}" target="_blank" rel="noopener noreferrer" 
+               style="display: inline-flex; align-items: center; gap: 6px; color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
+              <span>👥</span> View Attendees
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+          ` : ''}
         </div>
       `).join('');
 
