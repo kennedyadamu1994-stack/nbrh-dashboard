@@ -16,7 +16,7 @@
 
     body {
       font-family: 'Young Serif', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, serif;
-      background: #000000;
+      background: #1B1B1B;
       color: #ffffff;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -25,7 +25,7 @@
 
     /* Header */
     .header {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(42, 42, 42, 0.8);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       color: white;
@@ -246,18 +246,30 @@
       width: 100%;
       height: 200px;
       object-fit: cover;
-      background: linear-gradient(135deg, rgba(255, 27, 110, 0.2) 0%, rgba(255, 27, 110, 0.05) 100%);
+      background: linear-gradient(135deg, rgba(255, 27, 110, 0.3) 0%, rgba(255, 27, 110, 0.1) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
       position: relative;
+      overflow: hidden;
     }
 
     .session-image img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .session-image.no-image::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
     }
 
     .session-content {
@@ -764,8 +776,8 @@
 
       const sessionsHTML = sessions.map(session => `
         <div class="session-card">
-          <div class="session-image">
-            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : getSportEmoji(session.sport)}
+          <div class="session-image ${session.image ? '' : 'no-image'}">
+            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : ''}
           </div>
           <div class="session-content">
             <div class="session-header">
@@ -827,8 +839,8 @@
 
       const recommendationsHTML = recommendations.map(rec => `
         <div class="session-card">
-          <div class="session-image">
-            ${rec.image ? `<img src="${rec.image}" alt="${rec.title}" />` : getSportEmoji(rec.sport)}
+          <div class="session-image ${rec.image ? '' : 'no-image'}">
+            ${rec.image ? `<img src="${rec.image}" alt="${rec.title}" />` : ''}
           </div>
           <div class="session-content">
             <div class="session-header">
@@ -892,8 +904,8 @@
 
       const sessionsHTML = sessions.map(session => `
         <div class="session-card">
-          <div class="session-image">
-            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : getSportEmoji(session.sport)}
+          <div class="session-image ${session.image ? '' : 'no-image'}">
+            ${session.image ? `<img src="${session.image}" alt="${session.title}" />` : ''}
           </div>
           <div class="session-content">
             <div class="session-header">
@@ -1031,41 +1043,6 @@
     // ==========================================
     // UTILITY FUNCTIONS
     // ==========================================
-
-    function getSportEmoji(sport) {
-      const sportEmojis = {
-        'basketball': '🏀',
-        'football': '⚽',
-        'tennis': '🎾',
-        'badminton': '🏸',
-        'volleyball': '🏐',
-        'rugby': '🏉',
-        'cricket': '🏏',
-        'baseball': '⚾',
-        'hockey': '🏒',
-        'table tennis': '🏓',
-        'squash': '🎾',
-        'yoga': '🧘',
-        'pilates': '🤸',
-        'running': '🏃',
-        'cycling': '🚴',
-        'swimming': '🏊',
-        'gym': '💪',
-        'boxing': '🥊',
-        'martial arts': '🥋',
-        'climbing': '🧗',
-        'dance': '💃',
-        'fitness': '🏋️'
-      };
-      
-      const sportLower = sport.toLowerCase();
-      for (const [key, emoji] of Object.entries(sportEmojis)) {
-        if (sportLower.includes(key)) {
-          return emoji;
-        }
-      }
-      return '⚡'; // Default icon
-    }
 
     function formatDate(dateString) {
       const date = new Date(dateString);
