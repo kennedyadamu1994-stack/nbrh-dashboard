@@ -313,27 +313,15 @@ async function fetchEvents(): Promise<Event[]> {
   const endTimeIdx = getColumnIndex(headers, 'End Time');
   const locationIdx = getColumnIndex(headers, 'location');
   
-  // Column I (index 8) contains the borough
-  // Since there might be two "Location" columns (H and I), we need to be specific
-  // Column H (index 7) = location (full address)
-  // Column I (index 8) = Location (borough name)
+  // Find the borough column - it should be the column AFTER location (Column H is location, Column I is borough)
+  // We'll look for the column immediately after locationIdx
   let boroughIdx = -1;
-  // Try to find a column that might contain borough
-  for (let i = 0; i < headers.length; i++) {
-    const header = headers[i]?.toString().toLowerCase().trim();
-    // Look for borough-specific headers or check if it's column I (index 8)
-    if (header === 'borough' || header === 'location borough' || i === 8) {
-      // If it's column I (8) and the header contains 'location', use it for borough
-      if (i === 8) {
-        boroughIdx = i;
-        break;
-      }
-      // Or if we found a specific borough column
-      if (header.includes('borough')) {
-        boroughIdx = i;
-        break;
-      }
-    }
+  if (locationIdx !== -1 && locationIdx + 1 < headers.length) {
+    // Use the column right after location
+    boroughIdx = locationIdx + 1;
+  } else {
+    // Fallback: hardcode to Column I (index 8) if location isn't found
+    boroughIdx = 8;
   }
   
   const priceIdx = getColumnIndex(headers, 'base_price');
