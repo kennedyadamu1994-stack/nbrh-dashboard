@@ -30,6 +30,7 @@ interface Event {
   time: string;
   endTime: string;
   location: string;
+  borough: string;
   price: number;
   spotsRemaining: number;
   bookingUrl: string;
@@ -311,6 +312,7 @@ async function fetchEvents(): Promise<Event[]> {
   const timeIdx = getColumnIndex(headers, 'time');
   const endTimeIdx = getColumnIndex(headers, 'End Time');
   const locationIdx = getColumnIndex(headers, 'location');
+  const boroughIdx = getColumnIndex(headers, 'Location');
   const priceIdx = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
   const bookingUrlIdx = getColumnIndex(headers, 'booking_url');
@@ -333,6 +335,7 @@ async function fetchEvents(): Promise<Event[]> {
       time: timeIdx !== -1 ? row[timeIdx]?.toString() || '' : '',
       endTime: endTimeIdx !== -1 ? row[endTimeIdx]?.toString() || '' : '',
       location: locationIdx !== -1 ? row[locationIdx]?.toString() || '' : '',
+      borough: boroughIdx !== -1 ? row[boroughIdx]?.toString() || '' : '',
       price: priceIdx !== -1 ? parsePrice(row[priceIdx]?.toString() || '0') : 0,
       spotsRemaining: spotsRemainingIdx !== -1 ? parseInt(row[spotsRemainingIdx]?.toString() || '0') : 0,
       bookingUrl: bookingUrlIdx !== -1 ? row[bookingUrlIdx]?.toString() || '' : '',
@@ -418,6 +421,9 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
   const price = event?.price || parsePrice(booking.amountPaid);
   const category = event?.category || '';
   
+  // Use borough from event if available, otherwise extract from location
+  const borough = event?.borough || extractBorough(location);
+  
   // Prefer public URL over regular attendees URL
   const attendeeUrl = event?.attendeesPublicUrl || event?.attendeesUrl || '';
   
@@ -431,7 +437,7 @@ function createSessionCardFromBooking(booking: Booking, event: Event | undefined
     date: eventDate,
     time: formatTime(eventTime),
     venue: location,
-    borough: extractBorough(location),
+    borough: borough,
     price,
     badge: isPast ? undefined : getDateBadge(eventDate),
     difficulty: booking.skillLevel || '',
@@ -638,7 +644,7 @@ function generateRecommendations(
     }
 
     // Borough match
-    const eventBorough = extractBorough(event.location);
+    const eventBorough = event.borough || extractBorough(event.location);
     if (profile.homeBorough && eventBorough.toLowerCase().includes(profile.homeBorough.toLowerCase())) {
       score += 30;
       reasons.push('Near your home borough');
