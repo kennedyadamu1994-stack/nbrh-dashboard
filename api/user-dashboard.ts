@@ -312,7 +312,30 @@ async function fetchEvents(): Promise<Event[]> {
   const timeIdx = getColumnIndex(headers, 'time');
   const endTimeIdx = getColumnIndex(headers, 'End Time');
   const locationIdx = getColumnIndex(headers, 'location');
-  const boroughIdx = getColumnIndex(headers, 'Location');
+  
+  // Column I (index 8) contains the borough
+  // Since there might be two "Location" columns (H and I), we need to be specific
+  // Column H (index 7) = location (full address)
+  // Column I (index 8) = Location (borough name)
+  let boroughIdx = -1;
+  // Try to find a column that might contain borough
+  for (let i = 0; i < headers.length; i++) {
+    const header = headers[i]?.toString().toLowerCase().trim();
+    // Look for borough-specific headers or check if it's column I (index 8)
+    if (header === 'borough' || header === 'location borough' || i === 8) {
+      // If it's column I (8) and the header contains 'location', use it for borough
+      if (i === 8) {
+        boroughIdx = i;
+        break;
+      }
+      // Or if we found a specific borough column
+      if (header.includes('borough')) {
+        boroughIdx = i;
+        break;
+      }
+    }
+  }
+  
   const priceIdx = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
   const bookingUrlIdx = getColumnIndex(headers, 'booking_url');
