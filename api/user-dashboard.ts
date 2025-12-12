@@ -296,7 +296,7 @@ async function fetchEvents(): Promise<Event[]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${EVENTS_SHEET}!A:Z`,
+    range: `${EVENTS_SHEET}!A:AC`,
   });
 
   const rows = response.data.values || [];
@@ -313,16 +313,8 @@ async function fetchEvents(): Promise<Event[]> {
   const endTimeIdx = getColumnIndex(headers, 'End Time');
   const locationIdx = getColumnIndex(headers, 'location');
   
-  // Find the borough column - it should be the column AFTER location (Column H is location, Column I is borough)
-  // We'll look for the column immediately after locationIdx
-  let boroughIdx = -1;
-  if (locationIdx !== -1 && locationIdx + 1 < headers.length) {
-    // Use the column right after location
-    boroughIdx = locationIdx + 1;
-  } else {
-    // Fallback: hardcode to Column I (index 8) if location isn't found
-    boroughIdx = 8;
-  }
+  // Borough is in Column AB (index 27) of NBRH Events sheet
+  const boroughIdx = 27;
   
   const priceIdx = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
