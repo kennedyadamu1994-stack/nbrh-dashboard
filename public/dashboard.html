@@ -414,6 +414,35 @@
       transform: scale(1.02);
     }
 
+    /* Attendee button */
+    .attendee-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(255, 27, 110, 0.15);
+      color: #FF1B6E;
+      border: 1px solid rgba(255, 27, 110, 0.3);
+      padding: 10px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .attendee-button:hover {
+      background: rgba(255, 27, 110, 0.25);
+      transform: scale(1.02);
+    }
+
+    .attendee-button svg {
+      width: 14px;
+      height: 14px;
+    }
+
     /* Recommendation reason */
     .recommendation-reason {
       margin-top: 16px;
@@ -836,16 +865,14 @@
               ${session.difficulty ? `<div class="session-difficulty">${session.difficulty}</div>` : ''}
             </div>
             ${session.attendeeUrl ? `
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-              <a href="${session.attendeeUrl}" rel="noopener noreferrer" class="attendee-link">
-                <span>👥</span> View Attendees
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
+            <a href="${session.attendeeUrl}" rel="noopener noreferrer" class="attendee-button">
+              <span>👥</span> View Attendees
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
             ` : ''}
             <a href="https://forms.gle/HJsFyFKYrfK9dRbh6" rel="noopener noreferrer" class="cancel-button">
               <span>❌</span> Cancel Session
