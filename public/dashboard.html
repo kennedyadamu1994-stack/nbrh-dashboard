@@ -390,6 +390,30 @@
       letter-spacing: 0.5px;
     }
 
+    /* Cancel button */
+    .cancel-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 10px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .cancel-button:hover {
+      background: rgba(239, 68, 68, 0.25);
+      transform: scale(1.02);
+    }
+
     /* Recommendation reason */
     .recommendation-reason {
       margin-top: 16px;
@@ -752,7 +776,7 @@
         </div>
         ${stats.mostPlayedSport ? `
         <div class="stat-card">
-          <div class="stat-label">Favorite Sport</div>
+          <div class="stat-label">Favourite Sport</div>
           <div class="stat-value" style="font-size: 18px;">${stats.mostPlayedSport}</div>
         </div>
         ` : ''}
@@ -823,6 +847,9 @@
               </a>
             </div>
             ` : ''}
+            <a href="https://forms.gle/HJsFyFKYrfK9dRbh6" rel="noopener noreferrer" class="cancel-button">
+              <span>❌</span> Cancel Session
+            </a>
           </div>
         </div>
       `).join('');
@@ -837,7 +864,7 @@
         recommendationsGrid.innerHTML = `
           <div class="empty-state">
             <h3>No recommendations available</h3>
-            <p>Book more sessions to get personalized suggestions!</p>
+            <p>Book more sessions to get personalised suggestions!</p>
           </div>
         `;
         return;
