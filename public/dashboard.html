@@ -466,11 +466,11 @@
       height: 14px;
     }
 
-    /* Recommendations List */
+    /* Recommendations List - Compact Version */
     .recommendations-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .recommendation-item {
@@ -479,11 +479,13 @@
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 4px;
-      padding: 24px;
+      padding: 16px;
       display: flex;
-      gap: 20px;
-      align-items: start;
+      gap: 16px;
+      align-items: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      color: inherit;
     }
 
     .recommendation-item:hover {
@@ -494,17 +496,32 @@
 
     .recommendation-rank {
       flex-shrink: 0;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       background: rgba(255, 27, 110, 0.15);
       border: 1px solid rgba(255, 27, 110, 0.3);
       border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 400;
       color: #FF1B6E;
+    }
+
+    .recommendation-image {
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(255, 27, 110, 0.3) 0%, rgba(255, 27, 110, 0.1) 100%);
+    }
+
+    .recommendation-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .recommendation-content {
@@ -517,89 +534,50 @@
       justify-content: space-between;
       align-items: start;
       gap: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .recommendation-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 400;
       color: #ffffff;
       letter-spacing: -0.3px;
       line-height: 1.3;
     }
 
+    .recommendation-match {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .match-percentage {
+      font-size: 18px;
+      font-weight: 400;
+      color: #10b981;
+      letter-spacing: -0.5px;
+    }
+
     .recommendation-price {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 400;
       color: #FF1B6E;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .recommendation-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 12px;
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.6);
+      gap: 12px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .meta-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .meta-item strong {
-      font-size: 14px;
-    }
-
-    .recommendation-reason {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      background: rgba(255, 27, 110, 0.05);
-      border: 1px solid rgba(255, 27, 110, 0.1);
-      border-radius: 4px;
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 12px;
-    }
-
-    .reason-icon {
-      flex-shrink: 0;
-      font-size: 14px;
-    }
-
-    .reason-text {
-      flex: 1;
-    }
-
-    .recommendation-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #FF1B6E;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 400;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 8px 12px;
-      background: rgba(255, 27, 110, 0.1);
-      border-radius: 4px;
-      border: 1px solid rgba(255, 27, 110, 0.2);
-    }
-
-    .recommendation-link:hover {
-      background: rgba(255, 27, 110, 0.2);
-      transform: scale(1.02);
-    }
-
-    .recommendation-link svg {
-      width: 14px;
-      height: 14px;
+      gap: 4px;
     }
 
     /* Attendee link */
@@ -746,27 +724,27 @@
       }
 
       .recommendation-item {
-        flex-direction: column;
-        padding: 20px;
+        flex-wrap: wrap;
       }
 
       .recommendation-rank {
-        align-self: flex-start;
+        order: 1;
+      }
+
+      .recommendation-image {
+        order: 2;
+        width: 60px;
+        height: 60px;
+      }
+
+      .recommendation-content {
+        order: 3;
+        flex-basis: 100%;
       }
 
       .recommendation-meta {
         flex-direction: column;
-        gap: 8px;
-      }
-
-      .recommendation-header {
-        flex-direction: column;
-        align-items: start;
-        gap: 8px;
-      }
-
-      .recommendation-price {
-        align-self: flex-start;
+        gap: 6px;
       }
     }
   </style>
@@ -857,6 +835,9 @@
       currentPage: 1,
       pageSize: 10,
     };
+
+    // Maximum possible score for match percentage calculation
+    const MAX_SCORE = 185; // 50+35+30+25+20+15+10
 
     // ==========================================
     // INITIALISATION
@@ -1068,15 +1049,14 @@
       upcomingGrid.innerHTML = sessionsHTML;
     }
 
+    function calculateMatchPercentage(score) {
+      return Math.round((score / MAX_SCORE) * 100);
+    }
+
     function renderRecommendations(recommendations) {
       const recommendationsGrid = document.getElementById('recommendationsGrid');
 
-      console.log('[DEBUG] renderRecommendations called with:', recommendations);
-      console.log('[DEBUG] recommendations is array?', Array.isArray(recommendations));
-      console.log('[DEBUG] recommendations length:', recommendations?.length);
-
       if (!recommendations || !Array.isArray(recommendations) || recommendations.length === 0) {
-        console.log('[DEBUG] Showing empty state for recommendations');
         recommendationsGrid.innerHTML = `
           <div class="empty-state">
             <h3>No recommendations available</h3>
@@ -1086,47 +1066,37 @@
         return;
       }
 
-      console.log('[DEBUG] Creating recommendations HTML for', recommendations.length, 'items');
-
       const recommendationsHTML = `
         <div class="recommendations-list">
           ${recommendations.map((rec, index) => {
-            console.log('[DEBUG] Processing recommendation', index + 1, ':', rec);
+            const matchPercentage = calculateMatchPercentage(rec.score || 0);
             return `
-            <div class="recommendation-item">
+            <a href="${rec.bookingUrl || '#'}" class="recommendation-item" rel="noopener noreferrer">
               <div class="recommendation-rank">${index + 1}</div>
+              <div class="recommendation-image">
+                ${rec.image ? `<img src="${rec.image}" alt="${rec.title}" />` : ''}
+              </div>
               <div class="recommendation-content">
                 <div class="recommendation-header">
                   <h3 class="recommendation-title">${rec.title || 'Untitled Session'}</h3>
-                  <div class="recommendation-price">£${(rec.price || 0).toFixed(2)}</div>
+                  <div class="recommendation-match">
+                    <span class="match-percentage">${matchPercentage}%</span>
+                    <span class="recommendation-price">£${(rec.price || 0).toFixed(2)}</span>
+                  </div>
                 </div>
                 <div class="recommendation-meta">
-                  <span class="meta-item"><strong>🏃</strong> ${rec.sport || 'Activity'}</span>
-                  <span class="meta-item"><strong>📅</strong> ${formatDate(rec.date)} at ${rec.time}</span>
-                  <span class="meta-item"><strong>📍</strong> ${rec.borough || 'London'}</span>
+                  <span class="meta-item">🏃 ${rec.sport || 'Activity'}</span>
+                  <span class="meta-item">📅 ${formatDate(rec.date)}</span>
+                  <span class="meta-item">🕐 ${rec.time}</span>
+                  <span class="meta-item">📍 ${rec.borough || 'London'}</span>
                 </div>
-                <div class="recommendation-reason">
-                  <span class="reason-icon">✨</span>
-                  <span class="reason-text">${rec.reason || 'Recommended for you'}</span>
-                </div>
-                ${rec.attendeeUrl ? `
-                <a href="${rec.attendeeUrl}" rel="noopener noreferrer" class="recommendation-link">
-                  View Details & Book
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </a>
-                ` : ''}
               </div>
-            </div>
+            </a>
           `;
           }).join('')}
         </div>
       `;
 
-      console.log('[DEBUG] Setting recommendations HTML');
       recommendationsGrid.innerHTML = recommendationsHTML;
     }
 
