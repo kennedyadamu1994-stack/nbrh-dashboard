@@ -20,6 +20,7 @@ interface UserProfile {
   preferredTimes: string[];
   fitnessLevel: string;
   motivations: string;
+  gender: string;
 }
 
 interface Event {
@@ -40,6 +41,7 @@ interface Event {
   attendeesUrl: string;
   attendeesPublicUrl: string;
   imageUrl: string;
+  genderTarget: string;
 }
 
 interface Booking {
@@ -250,6 +252,7 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
 
   const emailIdx = getColumnIndex(headers, 'Email');
   const nameIdx = getColumnIndex(headers, 'Name');
+  const genderIdx = 3; // Column D (0-indexed: A=0, B=1, C=2, D=3)
   const boroughIdx = getColumnIndex(headers, 'Home Borough');
   const favouriteActivityIdx = getColumnIndex(headers, 'Favourite Activity');
   const experienceLevelIdx = getColumnIndex(headers, 'Experience Level');
@@ -290,6 +293,7 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
     preferredTimes: [],
     fitnessLevel: experienceLevelIdx !== -1 ? userRow[experienceLevelIdx]?.toString() || '' : '',
     motivations: '',
+    gender: genderIdx !== -1 ? userRow[genderIdx]?.toString() || '' : '',
   };
 }
 
@@ -298,7 +302,7 @@ async function fetchEvents(): Promise<Event[]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${EVENTS_SHEET}!A:AC`,
+    range: `${EVENTS_SHEET}!A:AD`,
   });
 
   const rows = response.data.values || [];
@@ -318,7 +322,9 @@ async function fetchEvents(): Promise<Event[]> {
   
   // Borough is in Column AB (index 27) of NBRH Events sheet
   // Session ID is in Column AC (index 28) of NBRH Events sheet
+  // Gender Target is in Column AD (index 29) of NBRH Events sheet
   const boroughIdx = 27;
+  const genderTargetIdx = 29;
   
   const priceIdx = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
@@ -352,6 +358,7 @@ async function fetchEvents(): Promise<Event[]> {
       attendeesUrl: attendeesUrlIdx !== -1 ? row[attendeesUrlIdx]?.toString() || '' : '',
       attendeesPublicUrl: attendeesPublicUrlIdx !== -1 ? row[attendeesPublicUrlIdx]?.toString() || '' : '',
       imageUrl: imageUrlIdx !== -1 ? row[imageUrlIdx]?.toString() || '' : '',
+      genderTarget: genderTargetIdx !== -1 ? row[genderTargetIdx]?.toString() || '' : '',
     };
 
     events.push(event);
@@ -638,30 +645,59 @@ function getBoroughRegion(borough: string): string | null {
   return null;
 }
 
-function matchesDemographic(eventName: string, profile: UserProfile): { matches: boolean; keywords: string[] } {
-  const eventLower = eventName.toLowerCase();
-  const matchedKeywords: string[] = [];
+/**
+ * Check if a session's gender target is compatible with the user's gender
+ * Returns: { isCompatible: boolean, bonusPoints: number, matchReason?: string }
+ */
+function checkGenderCompatibility(
+  sessionGenderTarget: string,
+  userGender: string
+): { isCompatible: boolean; bonusPoints: number; matchReason?: string } {
   
-  // Check for gender-specific sessions
-  const femaleKeywords = ['women', 'female', 'ladies', 'girls'];
-  const maleKeywords = ['men', 'male', 'boys', 'lads'];
+  // Normalize inputs
+  const sessionTarget = sessionGenderTarget.trim().toLowerCase();
+  const userGen = userGender.trim().toLowerCase();
   
-  femaleKeywords.forEach(keyword => {
-    if (eventLower.includes(keyword)) {
-      matchedKeywords.push(`${keyword}'s session`);
+  console.log(`[DEBUG] Gender check - Session: "${sessionTarget}", User: "${userGen}"`);
+  
+  // If no gender specified for session or user, it's compatible but no bonus
+  if (!sessionTarget || !userGen) {
+    return { isCompatible: true, bonusPoints: 0 };
+  }
+  
+  // "Women Only" sessions
+  if (sessionTarget.includes('women only') || sessionTarget === 'women only') {
+    if (userGen === 'female') {
+      console.log('[DEBUG] ✅ Female user matched to Women Only session (+30 points)');
+      return { 
+        isCompatible: true, 
+        bonusPoints: 30,
+        matchReason: "women's session"
+      };
+    } else if (userGen === 'male') {
+      console.log('[DEBUG] ❌ Male user excluded from Women Only session');
+      return { isCompatible: false, bonusPoints: 0 };
     }
-  });
+  }
   
-  maleKeywords.forEach(keyword => {
-    if (eventLower.includes(keyword)) {
-      matchedKeywords.push(`${keyword}'s session`);
+  // "Men" or "Men Only" sessions
+  if (sessionTarget === 'men' || sessionTarget === 'men only' || sessionTarget.includes('men only')) {
+    if (userGen === 'male') {
+      console.log('[DEBUG] ✅ Male user matched to Men session (+30 points)');
+      return { 
+        isCompatible: true, 
+        bonusPoints: 30,
+        matchReason: "men's session"
+      };
+    } else if (userGen === 'female') {
+      console.log('[DEBUG] ❌ Female user excluded from Men Only session');
+      return { isCompatible: false, bonusPoints: 0 };
     }
-  });
+  }
   
-  return {
-    matches: matchedKeywords.length > 0,
-    keywords: matchedKeywords
-  };
+  // Any other value (Mixed, All, Open, or empty) - compatible for everyone, no bonus
+  console.log('[DEBUG] ✅ Open session - compatible for all');
+  return { isCompatible: true, bonusPoints: 0 };
 }
 
 function matchesSkillLevel(eventName: string, userLevel: string): { matches: boolean; level: string } {
@@ -698,8 +734,10 @@ function generateRecommendations(
 
   const bookedEventIDs = new Set(bookings.map(b => b.eventID));
 
+  console.log(`[DEBUG] Generating recommendations for ${profile.gender} user`);
+
   // Filter to future, active, unbooked events
-  const candidates = events.filter(event => {
+  let candidates = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
     const isActive = event.active.toLowerCase() === 'true' || event.active.toLowerCase() === 'yes';
@@ -707,6 +745,19 @@ function generateRecommendations(
            isActive && 
            !bookedEventIDs.has(event.eventID);
   });
+
+  console.log(`[DEBUG] ${candidates.length} candidate events before gender filtering`);
+
+  // FIRST: Filter out gender-incompatible sessions
+  candidates = candidates.filter(event => {
+    const genderCheck = checkGenderCompatibility(event.genderTarget, profile.gender);
+    if (!genderCheck.isCompatible) {
+      console.log(`[DEBUG] Filtered out "${event.eventName}" due to gender incompatibility`);
+    }
+    return genderCheck.isCompatible;
+  });
+
+  console.log(`[DEBUG] ${candidates.length} candidate events after gender filtering`);
 
   const userRegion = profile.homeBorough ? getBoroughRegion(profile.homeBorough) : null;
 
@@ -746,11 +797,13 @@ function generateRecommendations(
       }
     }
 
-    // 3. DEMOGRAPHIC MATCH (30 points)
-    const demoMatch = matchesDemographic(event.eventName, profile);
-    if (demoMatch.matches) {
-      score += 30;
-      reasons.push(demoMatch.keywords[0]); // Add first matched keyword
+    // 3. GENDER DEMOGRAPHIC MATCH (30 points)
+    // At this point we know the session is compatible (we filtered incompatible ones)
+    // Now check if there's a match for bonus points
+    const genderCheck = checkGenderCompatibility(event.genderTarget, profile.gender);
+    if (genderCheck.bonusPoints > 0 && genderCheck.matchReason) {
+      score += genderCheck.bonusPoints;
+      reasons.push(genderCheck.matchReason);
     }
 
     // 4. SKILL/FITNESS LEVEL MATCH (25 points)
