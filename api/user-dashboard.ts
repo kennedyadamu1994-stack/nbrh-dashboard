@@ -308,7 +308,7 @@ async function fetchEvents(): Promise<Event[]> {
   const dataRows = rows.slice(1);
 
   const eventIDIdx = getColumnIndex(headers, 'event_id');
-  const sessionTemplateIDIdx = 43; // Column AR - Session ID
+  const sessionTemplateIDIdx = 28; // Column AC - Session ID (0-indexed: A=0, B=1... AC=28)
   const eventNameIdx = getColumnIndex(headers, 'event_name');
   const categoryIdx = getColumnIndex(headers, 'Category');
   const dateIdx = getColumnIndex(headers, 'date');
@@ -317,6 +317,7 @@ async function fetchEvents(): Promise<Event[]> {
   const locationIdx = getColumnIndex(headers, 'location');
   
   // Borough is in Column AB (index 27) of NBRH Events sheet
+  // Session ID is in Column AC (index 28) of NBRH Events sheet
   const boroughIdx = 27;
   
   const priceIdx = getColumnIndex(headers, 'base_price');
@@ -814,8 +815,10 @@ function generateRecommendations(
     };
   });
 
-  // Sort by score (highest first) and return top 5
+  // Sort by score (highest first)
   scoredEvents.sort((a, b) => b.score - a.score);
+
+  console.log('[DEBUG] Total scored events before deduplication:', scoredEvents.length);
 
   // Deduplicate by session template ID - only show one instance of each session
   const seenTemplateIDs = new Set<string>();
@@ -824,16 +827,23 @@ function generateRecommendations(
   for (const rec of scoredEvents) {
     // Find the original event to get its sessionTemplateID
     const event = events.find(e => e.eventID === rec.eventID);
-    const templateID = event?.sessionTemplateID || rec.eventID;
+    const templateID = event?.sessionTemplateID?.trim() || '';
+    
+    console.log(`[DEBUG] Event ${rec.eventID}: "${rec.title}", Session ID: "${templateID}"`);
+    
+    // If no session template ID, use eventID as fallback to ensure uniqueness
+    const uniqueKey = templateID || rec.eventID;
     
     // Skip if we've already seen this session template
-    if (seenTemplateIDs.has(templateID)) {
+    if (seenTemplateIDs.has(uniqueKey)) {
+      console.log(`[DEBUG] Skipping duplicate session template: ${uniqueKey}`);
       continue;
     }
     
     // Add to results and mark as seen
-    seenTemplateIDs.add(templateID);
+    seenTemplateIDs.add(uniqueKey);
     uniqueRecommendations.push(rec);
+    console.log(`[DEBUG] Added unique session: ${rec.title} (${uniqueKey})`);
     
     // Stop once we have 5 unique sessions
     if (uniqueRecommendations.length >= 5) {
@@ -841,6 +851,7 @@ function generateRecommendations(
     }
   }
 
+  console.log('[DEBUG] Final unique recommendations count:', uniqueRecommendations.length);
   console.log('[DEBUG] Top recommendations:', uniqueRecommendations.map(e => ({
     title: e.title,
     score: e.score,
