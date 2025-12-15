@@ -86,6 +86,7 @@ interface RecommendationCard {
   reason: string;
   attendeeUrl?: string;
   image?: string;
+  bookingUrl?: string;
 }
 
 interface UserStats {
@@ -806,6 +807,7 @@ function generateRecommendations(
       reason,
       attendeeUrl: event.attendeesPublicUrl || event.attendeesUrl || '',
       image: event.imageUrl || '',
+      bookingUrl: event.bookingUrl || '',
     };
   });
 
