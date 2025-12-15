@@ -733,27 +733,56 @@
       }
 
       .recommendation-item {
-        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px;
       }
 
       .recommendation-rank {
-        order: 1;
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
       }
 
       .recommendation-image {
-        order: 2;
         width: 60px;
         height: 60px;
       }
 
       .recommendation-content {
-        order: 3;
-        flex-basis: 100%;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .recommendation-title {
+        font-size: 15px;
+      }
+
+      .recommendation-header {
+        flex-direction: column;
+        align-items: start;
+        gap: 6px;
+      }
+
+      .recommendation-match {
+        gap: 6px;
+      }
+
+      .match-label {
+        font-size: 10px;
+      }
+
+      .match-percentage {
+        font-size: 16px;
+      }
+
+      .recommendation-price {
+        font-size: 15px;
       }
 
       .recommendation-meta {
         gap: 8px;
         font-size: 11px;
+        flex-wrap: wrap;
       }
 
       .meta-item {
