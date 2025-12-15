@@ -564,8 +564,8 @@
     .match-percentage {
       font-size: 18px;
       font-weight: 400;
-      color: #10b981;
       letter-spacing: -0.5px;
+      /* Color applied dynamically via inline style */
     }
 
     .recommendation-price {
@@ -752,8 +752,12 @@
       }
 
       .recommendation-meta {
-        flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+        font-size: 11px;
+      }
+
+      .meta-item {
+        white-space: nowrap;
       }
     }
   </style>
@@ -1062,6 +1066,21 @@
       return Math.round((score / MAX_SCORE) * 100);
     }
 
+    function getMatchColor(percentage) {
+      // Color gradient: Green (100%) → Yellow (50%) → Red (0%)
+      if (percentage >= 80) {
+        return '#10b981'; // Green
+      } else if (percentage >= 60) {
+        return '#34d399'; // Light green
+      } else if (percentage >= 40) {
+        return '#fbbf24'; // Yellow
+      } else if (percentage >= 20) {
+        return '#fb923c'; // Orange
+      } else {
+        return '#ef4444'; // Red
+      }
+    }
+
     function renderRecommendations(recommendations) {
       const recommendationsGrid = document.getElementById('recommendationsGrid');
 
@@ -1079,6 +1098,7 @@
         <div class="recommendations-list">
           ${recommendations.map((rec, index) => {
             const matchPercentage = calculateMatchPercentage(rec.score || 0);
+            const matchColor = getMatchColor(matchPercentage);
             return `
             <a href="${rec.bookingUrl || '#'}" class="recommendation-item" rel="noopener noreferrer">
               <div class="recommendation-rank">${index + 1}</div>
@@ -1090,7 +1110,7 @@
                   <h3 class="recommendation-title">${rec.title || 'Untitled Session'}</h3>
                   <div class="recommendation-match">
                     <span class="match-label">Match</span>
-                    <span class="match-percentage">${matchPercentage}%</span>
+                    <span class="match-percentage" style="color: ${matchColor}">${matchPercentage}%</span>
                     <span class="recommendation-price">£${(rec.price || 0).toFixed(2)}</span>
                   </div>
                 </div>
