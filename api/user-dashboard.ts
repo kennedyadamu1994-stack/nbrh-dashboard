@@ -86,6 +86,7 @@ interface RecommendationCard {
   price: number;
   difficulty: string;
   score: number;
+  displayPercentage: number;
   reason: string;
   attendeeUrl?: string;
   image?: string;
@@ -700,6 +701,42 @@ function checkGenderCompatibility(
   return { isCompatible: true, bonusPoints: 0 };
 }
 
+/**
+ * Calculate curved display percentage for better UX
+ * Transforms raw score into a more meaningful percentage
+ * 
+ * Score ranges:
+ * - 85+ points  → 80-100% (Excellent matches)
+ * - 60-84 points → 60-79% (Good matches)
+ * - 40-59 points → 40-59% (Moderate matches)
+ * - 20-39 points → 25-39% (Weak matches)
+ * - <20 points   → 10-24% (Poor matches)
+ */
+function calculateDisplayPercentage(rawScore: number): number {
+  if (rawScore >= 85) {
+    // Map 85-185 to 80-100%
+    // At 85 points = 80%, at 185 points = 100%
+    const normalized = (rawScore - 85) / (185 - 85);
+    return Math.round(80 + (normalized * 20));
+  } else if (rawScore >= 60) {
+    // Map 60-84 to 60-79%
+    const normalized = (rawScore - 60) / (84 - 60);
+    return Math.round(60 + (normalized * 19));
+  } else if (rawScore >= 40) {
+    // Map 40-59 to 40-59%
+    const normalized = (rawScore - 40) / (59 - 40);
+    return Math.round(40 + (normalized * 19));
+  } else if (rawScore >= 20) {
+    // Map 20-39 to 25-39%
+    const normalized = (rawScore - 20) / (39 - 20);
+    return Math.round(25 + (normalized * 14));
+  } else {
+    // Map 0-19 to 10-24%
+    const normalized = rawScore / 19;
+    return Math.round(10 + (normalized * 14));
+  }
+}
+
 function matchesSkillLevel(eventName: string, userLevel: string): { matches: boolean; level: string } {
   if (!userLevel) return { matches: false, level: '' };
   
@@ -850,6 +887,9 @@ function generateRecommendations(
     // Capitalize first letter
     reason = reason.charAt(0).toUpperCase() + reason.slice(1);
 
+    // Calculate curved display percentage
+    const displayPercentage = calculateDisplayPercentage(score);
+
     return {
       eventID: event.eventID,
       title: event.eventName,
@@ -861,6 +901,7 @@ function generateRecommendations(
       price: event.price,
       difficulty: skillMatch.level || '',
       score,
+      displayPercentage,
       reason,
       attendeeUrl: event.attendeesPublicUrl || event.attendeesUrl || '',
       image: event.imageUrl || '',
@@ -908,6 +949,7 @@ function generateRecommendations(
   console.log('[DEBUG] Top recommendations:', uniqueRecommendations.map(e => ({
     title: e.title,
     score: e.score,
+    displayPercentage: e.displayPercentage,
     reason: e.reason
   })));
 
