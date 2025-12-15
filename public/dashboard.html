@@ -878,9 +878,6 @@
       pageSize: 10,
     };
 
-    // Maximum possible score for match percentage calculation
-    const MAX_SCORE = 185; // 50+35+30+25+20+15+10
-
     // ==========================================
     // INITIALISATION
     // ==========================================
@@ -1091,10 +1088,6 @@
       upcomingGrid.innerHTML = sessionsHTML;
     }
 
-    function calculateMatchPercentage(score) {
-      return Math.round((score / MAX_SCORE) * 100);
-    }
-
     function getMatchColor(percentage) {
       // Color gradient: Green (100%) → Yellow (50%) → Red (0%)
       if (percentage >= 80) {
@@ -1103,7 +1096,7 @@
         return '#34d399'; // Light green
       } else if (percentage >= 40) {
         return '#fbbf24'; // Yellow
-      } else if (percentage >= 20) {
+      } else if (percentage >= 25) {
         return '#fb923c'; // Orange
       } else {
         return '#ef4444'; // Red
@@ -1126,7 +1119,8 @@
       const recommendationsHTML = `
         <div class="recommendations-list">
           ${recommendations.map((rec, index) => {
-            const matchPercentage = calculateMatchPercentage(rec.score || 0);
+            // Use displayPercentage from API (already curved)
+            const matchPercentage = rec.displayPercentage || 0;
             const matchColor = getMatchColor(matchPercentage);
             return `
             <a href="${rec.bookingUrl || '#'}" class="recommendation-item" rel="noopener noreferrer">
