@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -817,7 +817,7 @@
         <div class="section-header">
           <div>
             <h2 class="section-title">Recommended for You</h2>
-            <p class="section-subtitle">Personalized matches based on your preferences</p>
+            <p class="section-subtitle">Personalised matches based on your preferences</p>
           </div>
         </div>
         <div id="recommendationsGrid"></div>
@@ -859,7 +859,7 @@
     };
 
     // ==========================================
-    // INITIALIZATION
+    // INITIALISATION
     // ==========================================
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -899,7 +899,8 @@
 
         const result = await response.json();
         
-        console.log('[DEBUG] API Response:', result);
+        console.log('[DEBUG] Full API Response:', result);
+        console.log('[DEBUG] Recommendations data:', result.data?.recommendations);
 
         if (!result.success) {
           throw new Error(result.error?.message || 'Failed to load dashboard');
@@ -971,30 +972,30 @@
       
       const statsHTML = `
         <div class="stat-card">
-          <div class="stat-label">Total Booked</div>
+          <div class="stat-label">TOTAL BOOKED</div>
           <div class="stat-value">${stats.totalBooked || 0}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Sessions Attended</div>
+          <div class="stat-label">SESSIONS ATTENDED</div>
           <div class="stat-value">${stats.totalAttended || 0}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Hours Played</div>
+          <div class="stat-label">HOURS PLAYED</div>
           <div class="stat-value">${stats.totalHoursPlayed || 0}h</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Total Spent <span style="font-size: 10px; font-weight: 400; color: #6b7280;">(includes fees)</span></div>
+          <div class="stat-label">TOTAL SPENT <span style="font-size: 10px; font-weight: 400; color: #6b7280;">(includes fees)</span></div>
           <div class="stat-value">£${(stats.totalSpent || 0).toFixed(2)}</div>
         </div>
         ${stats.mostPlayedSport ? `
         <div class="stat-card">
-          <div class="stat-label">Favourite Sport</div>
+          <div class="stat-label">FAVOURITE SPORT</div>
           <div class="stat-value" style="font-size: 18px;">${stats.mostPlayedSport}</div>
         </div>
         ` : ''}
         ${stats.mostCommonDay ? `
         <div class="stat-card">
-          <div class="stat-label">Usual Day</div>
+          <div class="stat-label">USUAL DAY</div>
           <div class="stat-value" style="font-size: 18px;">${stats.mostCommonDay}</div>
         </div>
         ` : ''}
@@ -1070,34 +1071,43 @@
     function renderRecommendations(recommendations) {
       const recommendationsGrid = document.getElementById('recommendationsGrid');
 
-      if (recommendations.length === 0) {
+      console.log('[DEBUG] renderRecommendations called with:', recommendations);
+      console.log('[DEBUG] recommendations is array?', Array.isArray(recommendations));
+      console.log('[DEBUG] recommendations length:', recommendations?.length);
+
+      if (!recommendations || !Array.isArray(recommendations) || recommendations.length === 0) {
+        console.log('[DEBUG] Showing empty state for recommendations');
         recommendationsGrid.innerHTML = `
           <div class="empty-state">
             <h3>No recommendations available</h3>
-            <p>Book more sessions to get personalised suggestions!</p>
+            <p>We're working on finding the perfect sessions for you!</p>
           </div>
         `;
         return;
       }
 
+      console.log('[DEBUG] Creating recommendations HTML for', recommendations.length, 'items');
+
       const recommendationsHTML = `
         <div class="recommendations-list">
-          ${recommendations.map((rec, index) => `
+          ${recommendations.map((rec, index) => {
+            console.log('[DEBUG] Processing recommendation', index + 1, ':', rec);
+            return `
             <div class="recommendation-item">
               <div class="recommendation-rank">${index + 1}</div>
               <div class="recommendation-content">
                 <div class="recommendation-header">
-                  <h3 class="recommendation-title">${rec.title}</h3>
-                  <div class="recommendation-price">£${rec.price.toFixed(2)}</div>
+                  <h3 class="recommendation-title">${rec.title || 'Untitled Session'}</h3>
+                  <div class="recommendation-price">£${(rec.price || 0).toFixed(2)}</div>
                 </div>
                 <div class="recommendation-meta">
-                  <span class="meta-item"><strong>🏃</strong> ${rec.sport}</span>
+                  <span class="meta-item"><strong>🏃</strong> ${rec.sport || 'Activity'}</span>
                   <span class="meta-item"><strong>📅</strong> ${formatDate(rec.date)} at ${rec.time}</span>
-                  <span class="meta-item"><strong>📍</strong> ${rec.borough}</span>
+                  <span class="meta-item"><strong>📍</strong> ${rec.borough || 'London'}</span>
                 </div>
                 <div class="recommendation-reason">
                   <span class="reason-icon">✨</span>
-                  <span class="reason-text">${rec.reason}</span>
+                  <span class="reason-text">${rec.reason || 'Recommended for you'}</span>
                 </div>
                 ${rec.attendeeUrl ? `
                 <a href="${rec.attendeeUrl}" rel="noopener noreferrer" class="recommendation-link">
@@ -1111,10 +1121,12 @@
                 ` : ''}
               </div>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       `;
 
+      console.log('[DEBUG] Setting recommendations HTML');
       recommendationsGrid.innerHTML = recommendationsHTML;
     }
 
@@ -1222,35 +1234,35 @@
 
       const profileHTML = `
         <div class="profile-item">
-          <div class="profile-label">Name</div>
+          <div class="profile-label">NAME</div>
           <div class="profile-value">${profile.firstName} ${profile.lastName}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Email</div>
+          <div class="profile-label">EMAIL</div>
           <div class="profile-value">${profile.email}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Home Borough</div>
+          <div class="profile-label">HOME BOROUGH</div>
           <div class="profile-value">${profile.homeBorough || 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Fitness Level</div>
+          <div class="profile-label">FITNESS LEVEL</div>
           <div class="profile-value">${profile.fitnessLevel || 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Preferred Sports</div>
+          <div class="profile-label">PREFERRED SPORTS</div>
           <div class="profile-value">${(profile.preferredSports && profile.preferredSports.length > 0) ? profile.preferredSports.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Preferred Days</div>
+          <div class="profile-label">PREFERRED DAYS</div>
           <div class="profile-value">${(profile.preferredDays && profile.preferredDays.length > 0) ? profile.preferredDays.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Preferred Times</div>
+          <div class="profile-label">PREFERRED TIMES</div>
           <div class="profile-value">${(profile.preferredTimes && profile.preferredTimes.length > 0) ? profile.preferredTimes.join(', ') : 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">Motivations</div>
+          <div class="profile-label">MOTIVATIONS</div>
           <div class="profile-value">${profile.motivations || 'Not specified'}</div>
         </div>
       `;
