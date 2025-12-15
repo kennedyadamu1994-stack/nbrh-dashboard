@@ -697,8 +697,9 @@ function generateRecommendations(
   const candidates = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
+    const isActive = event.active.toLowerCase() === 'true' || event.active.toLowerCase() === 'yes';
     return eventDate >= now && 
-           event.active.toLowerCase() === 'true' && 
+           isActive && 
            !bookedEventIDs.has(event.eventID);
   });
 
