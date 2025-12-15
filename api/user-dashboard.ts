@@ -615,6 +615,74 @@ function calculateStats(bookings: Booking[], events: Event[]): UserStats {
 // RECOMMENDATIONS
 // ==========================================
 
+// Helper: Define London borough regions for proximity matching
+const LONDON_REGIONS = {
+  'East': ['Hackney', 'Tower Hamlets', 'Newham', 'Waltham Forest', 'Redbridge', 'Barking', 'Dagenham', 'Havering'],
+  'West': ['Hammersmith', 'Fulham', 'Ealing', 'Hounslow', 'Brent', 'Hillingdon', 'Harrow'],
+  'North': ['Camden', 'Islington', 'Haringey', 'Enfield', 'Barnet'],
+  'South': ['Lambeth', 'Southwark', 'Lewisham', 'Greenwich', 'Bromley', 'Croydon', 'Sutton', 'Merton'],
+  'Central': ['Westminster', 'Kensington', 'Chelsea', 'City of London']
+};
+
+function getBoroughRegion(borough: string): string | null {
+  for (const [region, boroughs] of Object.entries(LONDON_REGIONS)) {
+    if (boroughs.some(b => borough.toLowerCase().includes(b.toLowerCase()))) {
+      return region;
+    }
+  }
+  return null;
+}
+
+function matchesDemographic(eventName: string, profile: UserProfile): { matches: boolean; keywords: string[] } {
+  const eventLower = eventName.toLowerCase();
+  const matchedKeywords: string[] = [];
+  
+  // Check for gender-specific sessions
+  const femaleKeywords = ['women', 'female', 'ladies', 'girls'];
+  const maleKeywords = ['men', 'male', 'boys', 'lads'];
+  
+  femaleKeywords.forEach(keyword => {
+    if (eventLower.includes(keyword)) {
+      matchedKeywords.push(`${keyword}'s session`);
+    }
+  });
+  
+  maleKeywords.forEach(keyword => {
+    if (eventLower.includes(keyword)) {
+      matchedKeywords.push(`${keyword}'s session`);
+    }
+  });
+  
+  return {
+    matches: matchedKeywords.length > 0,
+    keywords: matchedKeywords
+  };
+}
+
+function matchesSkillLevel(eventName: string, userLevel: string): { matches: boolean; level: string } {
+  if (!userLevel) return { matches: false, level: '' };
+  
+  const eventLower = eventName.toLowerCase();
+  const userLower = userLevel.toLowerCase();
+  
+  // Skill level keywords
+  const skillLevels = ['beginner', 'intermediate', 'advanced', 'all levels', 'mixed ability'];
+  
+  for (const level of skillLevels) {
+    if (eventLower.includes(level)) {
+      // Check if it's a match or at least accepts all levels
+      if (level === 'all levels' || level === 'mixed ability') {
+        return { matches: true, level };
+      }
+      if (userLower.includes(level) || level.includes(userLower)) {
+        return { matches: true, level };
+      }
+    }
+  }
+  
+  return { matches: false, level: '' };
+}
+
 function generateRecommendations(
   events: Event[],
   profile: UserProfile,
@@ -625,6 +693,7 @@ function generateRecommendations(
 
   const bookedEventIDs = new Set(bookings.map(b => b.eventID));
 
+  // Filter to future, active, unbooked events
   const candidates = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
@@ -633,32 +702,94 @@ function generateRecommendations(
            !bookedEventIDs.has(event.eventID);
   });
 
+  const userRegion = profile.homeBorough ? getBoroughRegion(profile.homeBorough) : null;
+
   const scoredEvents = candidates.map(event => {
     let score = 0;
     const reasons: string[] = [];
 
-    // Sport match
-    if (profile.preferredSports.some(s => 
+    // 1. SPORT/ACTIVITY MATCH (50 points)
+    const sportMatch = profile.preferredSports.some(s => 
       s.toLowerCase() === event.category.toLowerCase() ||
       event.eventName.toLowerCase().includes(s.toLowerCase())
-    )) {
+    );
+    
+    if (sportMatch) {
       score += 50;
-      reasons.push(`Matches your interest in ${event.category || 'this sport'}`);
+      const matchedSport = profile.preferredSports.find(s => 
+        s.toLowerCase() === event.category.toLowerCase() ||
+        event.eventName.toLowerCase().includes(s.toLowerCase())
+      );
+      reasons.push(`${matchedSport || event.category} session`);
     }
 
-    // Borough match
+    // 2. GEOGRAPHIC PROXIMITY (35 points)
     const eventBorough = event.borough || extractBorough(event.location);
+    
+    // Exact borough match
     if (profile.homeBorough && eventBorough.toLowerCase().includes(profile.homeBorough.toLowerCase())) {
+      score += 35;
+      reasons.push(`in ${eventBorough}`);
+    } 
+    // Regional proximity (e.g., both in East London)
+    else if (userRegion) {
+      const eventRegion = getBoroughRegion(eventBorough);
+      if (eventRegion === userRegion) {
+        score += 25;
+        reasons.push(`in ${eventRegion} London`);
+      }
+    }
+
+    // 3. DEMOGRAPHIC MATCH (30 points)
+    const demoMatch = matchesDemographic(event.eventName, profile);
+    if (demoMatch.matches) {
       score += 30;
-      reasons.push('Near your home borough');
+      reasons.push(demoMatch.keywords[0]); // Add first matched keyword
     }
 
-    // Default scoring for nearby events
+    // 4. SKILL/FITNESS LEVEL MATCH (25 points)
+    const skillMatch = matchesSkillLevel(event.eventName, profile.fitnessLevel);
+    if (skillMatch.matches) {
+      score += 25;
+      reasons.push(`${skillMatch.level} level`);
+    }
+
+    // 5. DAY PREFERENCE MATCH (20 points)
+    if (profile.preferredDays && profile.preferredDays.length > 0) {
+      const eventDay = getDayOfWeek(event.date);
+      if (eventDay && profile.preferredDays.some(day => day.toLowerCase() === eventDay.toLowerCase())) {
+        score += 20;
+        reasons.push(`on ${eventDay}`);
+      }
+    }
+
+    // 6. TIME PREFERENCE MATCH (15 points)
+    if (profile.preferredTimes && profile.preferredTimes.length > 0) {
+      const eventTime = event.time.toLowerCase();
+      if (profile.preferredTimes.some(time => eventTime.includes(time.toLowerCase()))) {
+        score += 15;
+        reasons.push('at your preferred time');
+      }
+    }
+
+    // 7. PRICE BONUS (5-10 points for affordable sessions)
+    if (event.price <= 10) {
+      score += 10;
+      if (event.price <= 5) {
+        reasons.push('budget-friendly');
+      }
+    }
+
+    // Default minimum score for variety
     if (score === 0) {
-      score = 10;
+      score = 5;
     }
 
-    const reason = reasons.length > 0 ? reasons.join(', ') : 'Popular in your area';
+    // Build reason string
+    let reason = reasons.length > 0 ? reasons.join(' · ') : 'New session in your area';
+    
+    // Capitalize first letter
+    reason = reason.charAt(0).toUpperCase() + reason.slice(1);
 
     return {
       eventID: event.eventID,
@@ -669,7 +800,7 @@ function generateRecommendations(
       venue: event.location,
       borough: eventBorough,
       price: event.price,
-      difficulty: '',
+      difficulty: skillMatch.level || '',
       score,
       reason,
       attendeeUrl: event.attendeesPublicUrl || event.attendeesUrl || '',
@@ -677,9 +808,16 @@ function generateRecommendations(
     };
   });
 
+  // Sort by score (highest first) and return top 5
   scoredEvents.sort((a, b) => b.score - a.score);
 
-  return scoredEvents.slice(0, 6);
+  console.log('[DEBUG] Top recommendations:', scoredEvents.slice(0, 5).map(e => ({
+    title: e.title,
+    score: e.score,
+    reason: e.reason
+  })));
+
+  return scoredEvents.slice(0, 5);
 }
 
 // ==========================================
