@@ -24,6 +24,7 @@ interface UserProfile {
 
 interface Event {
   eventID: string;
+  sessionTemplateID: string;
   eventName: string;
   category: string;
   date: string;
@@ -307,6 +308,7 @@ async function fetchEvents(): Promise<Event[]> {
   const dataRows = rows.slice(1);
 
   const eventIDIdx = getColumnIndex(headers, 'event_id');
+  const sessionTemplateIDIdx = 43; // Column AR - Session ID
   const eventNameIdx = getColumnIndex(headers, 'event_name');
   const categoryIdx = getColumnIndex(headers, 'Category');
   const dateIdx = getColumnIndex(headers, 'date');
@@ -333,6 +335,7 @@ async function fetchEvents(): Promise<Event[]> {
 
     const event: Event = {
       eventID: row[eventIDIdx]?.toString() || '',
+      sessionTemplateID: sessionTemplateIDIdx !== -1 ? row[sessionTemplateIDIdx]?.toString() || '' : '',
       eventName: eventNameIdx !== -1 ? row[eventNameIdx]?.toString() || '' : '',
       category: categoryIdx !== -1 ? row[categoryIdx]?.toString() || '' : '',
       date: dateIdx !== -1 ? row[dateIdx]?.toString() || '' : '',
@@ -814,13 +817,37 @@ function generateRecommendations(
   // Sort by score (highest first) and return top 5
   scoredEvents.sort((a, b) => b.score - a.score);
 
-  console.log('[DEBUG] Top recommendations:', scoredEvents.slice(0, 5).map(e => ({
+  // Deduplicate by session template ID - only show one instance of each session
+  const seenTemplateIDs = new Set<string>();
+  const uniqueRecommendations: RecommendationCard[] = [];
+  
+  for (const rec of scoredEvents) {
+    // Find the original event to get its sessionTemplateID
+    const event = events.find(e => e.eventID === rec.eventID);
+    const templateID = event?.sessionTemplateID || rec.eventID;
+    
+    // Skip if we've already seen this session template
+    if (seenTemplateIDs.has(templateID)) {
+      continue;
+    }
+    
+    // Add to results and mark as seen
+    seenTemplateIDs.add(templateID);
+    uniqueRecommendations.push(rec);
+    
+    // Stop once we have 5 unique sessions
+    if (uniqueRecommendations.length >= 5) {
+      break;
+    }
+  }
+
+  console.log('[DEBUG] Top recommendations:', uniqueRecommendations.map(e => ({
     title: e.title,
     score: e.score,
     reason: e.reason
   })));
 
-  return scoredEvents.slice(0, 5);
+  return uniqueRecommendations;
 }
 
 // ==========================================
