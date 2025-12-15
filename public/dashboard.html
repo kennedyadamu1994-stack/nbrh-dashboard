@@ -553,6 +553,14 @@
       flex-shrink: 0;
     }
 
+    .match-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
     .match-percentage {
       font-size: 18px;
       font-weight: 400;
@@ -796,7 +804,7 @@
         <div class="section-header">
           <div>
             <h2 class="section-title">Recommended for You</h2>
-            <p class="section-subtitle">Personalised matches based on your preferences</p>
+            <p class="section-subtitle">Match % shows how well each session fits your preferences</p>
           </div>
         </div>
         <div id="recommendationsGrid"></div>
@@ -1081,6 +1089,7 @@
                 <div class="recommendation-header">
                   <h3 class="recommendation-title">${rec.title || 'Untitled Session'}</h3>
                   <div class="recommendation-match">
+                    <span class="match-label">Match</span>
                     <span class="match-percentage">${matchPercentage}%</span>
                     <span class="recommendation-price">£${(rec.price || 0).toFixed(2)}</span>
                   </div>
