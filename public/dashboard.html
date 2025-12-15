@@ -1282,18 +1282,6 @@
           <div class="profile-label">PREFERRED SPORTS</div>
           <div class="profile-value">${(profile.preferredSports && profile.preferredSports.length > 0) ? profile.preferredSports.join(', ') : 'Not specified'}</div>
         </div>
-        <div class="profile-item">
-          <div class="profile-label">PREFERRED DAYS</div>
-          <div class="profile-value">${(profile.preferredDays && profile.preferredDays.length > 0) ? profile.preferredDays.join(', ') : 'Not specified'}</div>
-        </div>
-        <div class="profile-item">
-          <div class="profile-label">PREFERRED TIMES</div>
-          <div class="profile-value">${(profile.preferredTimes && profile.preferredTimes.length > 0) ? profile.preferredTimes.join(', ') : 'Not specified'}</div>
-        </div>
-        <div class="profile-item">
-          <div class="profile-label">MOTIVATIONS</div>
-          <div class="profile-value">${profile.motivations || 'Not specified'}</div>
-        </div>
       `;
 
       profileGrid.innerHTML = profileHTML;
