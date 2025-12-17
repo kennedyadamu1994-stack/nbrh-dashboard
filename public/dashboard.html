@@ -1009,7 +1009,7 @@
         </div>
         ${stats.mostPlayedSport ? `
         <div class="stat-card">
-          <div class="stat-label">FAVOURITE SPORT</div>
+          <div class="stat-label">FAVOURITE ACTIVITY</div>
           <div class="stat-value" style="font-size: 18px;">${stats.mostPlayedSport}</div>
         </div>
         ` : ''}
@@ -1269,11 +1269,11 @@
           <div class="profile-value">${profile.homeBorough || 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">FITNESS LEVEL</div>
+          <div class="profile-label">EXPERIENCE LEVEL</div>
           <div class="profile-value">${profile.fitnessLevel || 'Not specified'}</div>
         </div>
         <div class="profile-item">
-          <div class="profile-label">PREFERRED SPORTS</div>
+          <div class="profile-label">PREFERRED ACTIVITY</div>
           <div class="profile-value">${(profile.preferredSports && profile.preferredSports.length > 0) ? profile.preferredSports.join(', ') : 'Not specified'}</div>
         </div>
       `;
