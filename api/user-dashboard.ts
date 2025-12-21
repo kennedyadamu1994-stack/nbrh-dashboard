@@ -19,7 +19,8 @@ interface UserProfile {
   preferredDays: string[];
   preferredTimes: string[];
   fitnessLevel: string;
-  motivations: string;
+  motivations: string[];
+  sessionFormatPreference: string;
   gender: string;
 }
 
@@ -42,6 +43,8 @@ interface Event {
   attendeesPublicUrl: string;
   imageUrl: string;
   genderTarget: string;
+  motivations: string[];
+  sessionFormat: string;
 }
 
 interface Booking {
@@ -258,6 +261,8 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
   const favouriteActivityIdx = getColumnIndex(headers, 'Favourite Activity');
   const experienceLevelIdx = getColumnIndex(headers, 'Experience Level');
   const otherActivitiesIdx = getColumnIndex(headers, 'Other Activities Interested In');
+  const motivationsIdx = getColumnIndex(headers, 'Motivations');
+  const sessionFormatIdx = getColumnIndex(headers, 'Session Format Preference');
 
   if (emailIdx === -1) {
     throw new Error('Email column not found in Onboarding Database');
@@ -284,6 +289,16 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
     preferredSports.push(...otherActivities);
   }
 
+  // Parse motivations (comma-separated)
+  const motivations = motivationsIdx !== -1 && userRow[motivationsIdx]
+    ? parseCommaSeparated(userRow[motivationsIdx].toString())
+    : [];
+
+  // Get session format preference
+  const sessionFormatPreference = sessionFormatIdx !== -1 && userRow[sessionFormatIdx]
+    ? userRow[sessionFormatIdx].toString()
+    : '';
+
   return {
     email: userRow[emailIdx]?.toString() || '',
     firstName,
@@ -293,7 +308,8 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
     preferredDays: [],
     preferredTimes: [],
     fitnessLevel: experienceLevelIdx !== -1 ? userRow[experienceLevelIdx]?.toString() || '' : '',
-    motivations: '',
+    motivations,
+    sessionFormatPreference,
     gender: genderIdx !== -1 ? userRow[genderIdx]?.toString() || '' : '',
   };
 }
@@ -303,7 +319,7 @@ async function fetchEvents(): Promise<Event[]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${EVENTS_SHEET}!A:AD`,
+    range: `${EVENTS_SHEET}!A:AG`,
   });
 
   const rows = response.data.values || [];
@@ -324,8 +340,12 @@ async function fetchEvents(): Promise<Event[]> {
   // Borough is in Column AB (index 27) of NBRH Events sheet
   // Session ID is in Column AC (index 28) of NBRH Events sheet
   // Gender Target is in Column AD (index 29) of NBRH Events sheet
+  // Motivations is in Column AF (index 31) of NBRH Events sheet
+  // Session Format is in Column AG (index 32) of NBRH Events sheet
   const boroughIdx = 27;
   const genderTargetIdx = 29;
+  const motivationsIdx = 31;
+  const sessionFormatIdx = 32;
   
   const priceIdx = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
@@ -340,6 +360,16 @@ async function fetchEvents(): Promise<Event[]> {
 
   for (const row of dataRows) {
     if (!row[eventIDIdx]) continue;
+
+    // Parse motivations (comma-separated)
+    const motivations = motivationsIdx !== -1 && row[motivationsIdx]
+      ? parseCommaSeparated(row[motivationsIdx].toString())
+      : [];
+
+    // Get session format
+    const sessionFormat = sessionFormatIdx !== -1 && row[sessionFormatIdx]
+      ? row[sessionFormatIdx].toString()
+      : '';
 
     const event: Event = {
       eventID: row[eventIDIdx]?.toString() || '',
@@ -360,6 +390,8 @@ async function fetchEvents(): Promise<Event[]> {
       attendeesPublicUrl: attendeesPublicUrlIdx !== -1 ? row[attendeesPublicUrlIdx]?.toString() || '' : '',
       imageUrl: imageUrlIdx !== -1 ? row[imageUrlIdx]?.toString() || '' : '',
       genderTarget: genderTargetIdx !== -1 ? row[genderTargetIdx]?.toString() || '' : '',
+      motivations,
+      sessionFormat,
     };
 
     events.push(event);
@@ -772,6 +804,8 @@ function generateRecommendations(
   const bookedEventIDs = new Set(bookings.map(b => b.eventID));
 
   console.log(`[DEBUG] Generating recommendations for ${profile.gender} user`);
+  console.log(`[DEBUG] User motivations:`, profile.motivations);
+  console.log(`[DEBUG] User session format preference:`, profile.sessionFormatPreference);
 
   // Filter to future, active, unbooked events
   let candidates = events.filter(event => {
@@ -843,14 +877,44 @@ function generateRecommendations(
       reasons.push(genderCheck.matchReason);
     }
 
-    // 4. SKILL/FITNESS LEVEL MATCH (25 points)
+    // 4. MOTIVATIONS MATCH (25 points)
+    // Check if any of the user's motivations match the event's motivations
+    if (profile.motivations.length > 0 && event.motivations.length > 0) {
+      const motivationMatches = profile.motivations.filter(userMotivation =>
+        event.motivations.some(eventMotivation =>
+          eventMotivation.toLowerCase().trim() === userMotivation.toLowerCase().trim()
+        )
+      );
+      
+      if (motivationMatches.length > 0) {
+        score += 25;
+        console.log(`[DEBUG] Motivation match for "${event.eventName}": ${motivationMatches.join(', ')}`);
+        // Add the first matched motivation to reasons (keep it concise)
+        reasons.push(`for ${motivationMatches[0].toLowerCase()}`);
+      }
+    }
+
+    // 5. SKILL/FITNESS LEVEL MATCH (25 points)
     const skillMatch = matchesSkillLevel(event.eventName, profile.fitnessLevel);
     if (skillMatch.matches) {
       score += 25;
       reasons.push(`${skillMatch.level} level`);
     }
 
-    // 5. DAY PREFERENCE MATCH (20 points)
+    // 6. SESSION FORMAT MATCH (20 points)
+    // Check if the event's session format matches user's preference
+    if (profile.sessionFormatPreference && event.sessionFormat) {
+      const userFormatLower = profile.sessionFormatPreference.toLowerCase().trim();
+      const eventFormatLower = event.sessionFormat.toLowerCase().trim();
+      
+      if (userFormatLower === eventFormatLower) {
+        score += 20;
+        console.log(`[DEBUG] Session format match for "${event.eventName}": ${event.sessionFormat}`);
+        reasons.push(`${event.sessionFormat.toLowerCase()} format`);
+      }
+    }
+
+    // 7. DAY PREFERENCE MATCH (20 points)
     if (profile.preferredDays && profile.preferredDays.length > 0) {
       const eventDay = getDayOfWeek(event.date);
       if (eventDay && profile.preferredDays.some(day => day.toLowerCase() === eventDay.toLowerCase())) {
@@ -859,7 +923,7 @@ function generateRecommendations(
       }
     }
 
-    // 6. TIME PREFERENCE MATCH (15 points)
+    // 8. TIME PREFERENCE MATCH (15 points)
     if (profile.preferredTimes && profile.preferredTimes.length > 0) {
       const eventTime = event.time.toLowerCase();
       if (profile.preferredTimes.some(time => eventTime.includes(time.toLowerCase()))) {
@@ -868,7 +932,7 @@ function generateRecommendations(
       }
     }
 
-    // 7. PRICE BONUS (5-10 points for affordable sessions)
+    // 9. PRICE BONUS (5-10 points for affordable sessions)
     if (event.price <= 10) {
       score += 10;
       if (event.price <= 5) {
