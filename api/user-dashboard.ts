@@ -737,34 +737,33 @@ function checkGenderCompatibility(
  * Calculate curved display percentage for better UX
  * Transforms raw score into a more meaningful percentage
  * 
- * Score ranges:
- * - 85+ points  → 80-100% (Excellent matches)
- * - 60-84 points → 60-79% (Good matches)
- * - 40-59 points → 40-59% (Moderate matches)
- * - 20-39 points → 25-39% (Weak matches)
- * - <20 points   → 10-24% (Poor matches)
+ * Updated score ranges (sport match now worth 80 points, max ~260):
+ * - 120+ points → 80-100% (Excellent matches - sport + multiple factors)
+ * - 90-119 points → 60-79% (Good matches - sport + some factors)
+ * - 60-89 points → 40-59% (Moderate matches - sport or several other factors)
+ * - 40-59 points → 25-39% (Weak matches)
+ * - <40 points → 10-24% (Very weak matches)
  */
 function calculateDisplayPercentage(rawScore: number): number {
-  if (rawScore >= 85) {
-    // Map 85-185 to 80-100%
-    // At 85 points = 80%, at 185 points = 100%
-    const normalized = (rawScore - 85) / (185 - 85);
+  if (rawScore >= 120) {
+    // Map 120-260 to 80-100%
+    const normalized = Math.min((rawScore - 120) / (260 - 120), 1);
     return Math.round(80 + (normalized * 20));
-  } else if (rawScore >= 60) {
-    // Map 60-84 to 60-79%
-    const normalized = (rawScore - 60) / (84 - 60);
+  } else if (rawScore >= 90) {
+    // Map 90-119 to 60-79%
+    const normalized = (rawScore - 90) / (119 - 90);
     return Math.round(60 + (normalized * 19));
-  } else if (rawScore >= 40) {
-    // Map 40-59 to 40-59%
-    const normalized = (rawScore - 40) / (59 - 40);
+  } else if (rawScore >= 60) {
+    // Map 60-89 to 40-59%
+    const normalized = (rawScore - 60) / (89 - 60);
     return Math.round(40 + (normalized * 19));
-  } else if (rawScore >= 20) {
-    // Map 20-39 to 25-39%
-    const normalized = (rawScore - 20) / (39 - 20);
+  } else if (rawScore >= 40) {
+    // Map 40-59 to 25-39%
+    const normalized = (rawScore - 40) / (59 - 40);
     return Math.round(25 + (normalized * 14));
   } else {
-    // Map 0-19 to 10-24%
-    const normalized = rawScore / 19;
+    // Map 0-39 to 10-24%
+    const normalized = Math.min(rawScore / 39, 1);
     return Math.round(10 + (normalized * 14));
   }
 }
@@ -783,8 +782,49 @@ function isSportMatch(userSport: string, eventCategory: string, eventName: strin
     return true;
   }
   
-  // Check if the event name contains the sport as a distinct word
-  // Use word boundaries to avoid "football" matching "American football"
+  // Special handling for "Football" to avoid matching compound sports
+  if (userSportLower === 'football') {
+    // Explicitly exclude American Football, Australian Rules Football, Flag Football, etc.
+    const footballCompounds = [
+      'american football',
+      'american flag football', 
+      'flag football',
+      'australian rules football',
+      'afl', // Australian Football League
+      'gridiron'
+    ];
+    
+    // Check if category or name contains any excluded compound
+    const textToCheck = `${categoryLower} ${nameLower}`;
+    const isCompoundFootball = footballCompounds.some(compound => 
+      textToCheck.includes(compound)
+    );
+    
+    if (isCompoundFootball) {
+      console.log(`[DEBUG] ❌ Excluding compound football sport: "${eventName}" (${eventCategory})`);
+      return false;
+    }
+    
+    // Now check if it's actually football/soccer
+    const footballKeywords = ['football', 'soccer', '5-a-side', '7-a-side', '11-a-side'];
+    return footballKeywords.some(keyword => 
+      categoryLower.includes(keyword) || nameLower.includes(keyword)
+    );
+  }
+  
+  // Special handling for "Boxing" to avoid matching "Kids Boxing", "Youth Boxing", etc.
+  if (userSportLower === 'boxing') {
+    // Check if it's a kids/youth boxing session
+    if (isChildrenSession(eventName, eventCategory)) {
+      console.log(`[DEBUG] ❌ Excluding children's boxing: "${eventName}"`);
+      return false;
+    }
+    
+    // Check for boxing keywords
+    return categoryLower.includes('boxing') || nameLower.includes('boxing');
+  }
+  
+  // For other sports, use word boundary matching
   const sportRegex = new RegExp(`\\b${userSportLower}\\b`, 'i');
   
   // Check category with word boundaries
@@ -792,7 +832,7 @@ function isSportMatch(userSport: string, eventCategory: string, eventName: strin
     return true;
   }
   
-  // Check event name with word boundaries
+  // Check event name with word boundaries  
   if (sportRegex.test(nameLower)) {
     return true;
   }
@@ -895,19 +935,21 @@ function generateRecommendations(
   const scoredEvents = candidates.map(event => {
     let score = 0;
     const reasons: string[] = [];
+    let hasSportMatch = false;
 
-    // 1. SPORT/ACTIVITY MATCH (50 points) - using improved matching logic
+    // 1. SPORT/ACTIVITY MATCH (80 points) - INCREASED IMPORTANCE
     const sportMatch = profile.preferredSports.some(s => 
       isSportMatch(s, event.category, event.eventName)
     );
     
     if (sportMatch) {
-      score += 50;
+      score += 80; // Increased from 50 to 80
+      hasSportMatch = true;
       const matchedSport = profile.preferredSports.find(s => 
         isSportMatch(s, event.category, event.eventName)
       );
       reasons.push(`${matchedSport || event.category} session`);
-      console.log(`[DEBUG] ✅ "${event.eventName}" matched sport: ${matchedSport} (+50 points)`);
+      console.log(`[DEBUG] ✅ "${event.eventName}" matched sport: ${matchedSport} (+80 points)`);
     } else {
       console.log(`[DEBUG] ⚠️ "${event.eventName}" (${event.category}) - NO sport match with:`, profile.preferredSports);
     }
@@ -1008,6 +1050,14 @@ function generateRecommendations(
       console.log(`[DEBUG] ✅ "${event.eventName}" price bonus (+10 points)`);
     }
 
+    // PENALTY: If no sport match, apply heavy penalty (reduce score by 60%)
+    // This ensures sport-mismatched sessions rarely appear unless there are no alternatives
+    if (!hasSportMatch && profile.preferredSports.length > 0) {
+      const originalScore = score;
+      score = Math.floor(score * 0.4); // Keep only 40% of score
+      console.log(`[DEBUG] ⚠️ "${event.eventName}" NO sport match - applying penalty: ${originalScore} → ${score}`);
+    }
+
     console.log(`[DEBUG] 📊 "${event.eventName}" final score: ${score} points`);
 
     // Build reason string
@@ -1046,9 +1096,10 @@ function generateRecommendations(
     console.log(`[DEBUG] #${i + 1}: "${event.title}" - ${event.score} pts (${event.displayPercentage}%) - ${event.reason}`);
   });
 
-  // QUALITY THRESHOLD: Only show recommendations with score >= 40
+  // QUALITY THRESHOLD: Only show recommendations with score >= 60
   // This ensures we don't show completely irrelevant sessions
-  const MIN_RECOMMENDATION_SCORE = 40;
+  // With sport match worth 80 points, a good match should score 80+
+  const MIN_RECOMMENDATION_SCORE = 60;
   const qualityRecommendations = scoredEvents.filter(rec => rec.score >= MIN_RECOMMENDATION_SCORE);
 
   console.log(`[DEBUG] ${qualityRecommendations.length} events passed quality threshold (score >= ${MIN_RECOMMENDATION_SCORE})`);
