@@ -769,6 +769,52 @@ function calculateDisplayPercentage(rawScore: number): number {
   }
 }
 
+/**
+ * Check if a sport name matches the user's preferred sport
+ * Uses exact matching to avoid false positives like "football" matching "American football"
+ */
+function isSportMatch(userSport: string, eventCategory: string, eventName: string): boolean {
+  const userSportLower = userSport.toLowerCase().trim();
+  const categoryLower = eventCategory.toLowerCase().trim();
+  const nameLower = eventName.toLowerCase().trim();
+  
+  // Exact category match
+  if (userSportLower === categoryLower) {
+    return true;
+  }
+  
+  // Check if the event name contains the sport as a distinct word
+  // Use word boundaries to avoid "football" matching "American football"
+  const sportRegex = new RegExp(`\\b${userSportLower}\\b`, 'i');
+  
+  // Check category with word boundaries
+  if (sportRegex.test(categoryLower)) {
+    return true;
+  }
+  
+  // Check event name with word boundaries
+  if (sportRegex.test(nameLower)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Check if an event is targeted at children/youth (should be filtered for adults)
+ */
+function isChildrenSession(eventName: string, eventCategory: string): boolean {
+  const text = `${eventName} ${eventCategory}`.toLowerCase();
+  
+  const childKeywords = [
+    'kids', 'children', 'child', 'youth', 'junior', 'juniors',
+    'under 16', 'under 18', 'u16', 'u18', 'u14', 'u12', 'u10',
+    'primary school', 'secondary school', 'school kids', 'school-age'
+  ];
+  
+  return childKeywords.some(keyword => text.includes(keyword));
+}
+
 function matchesSkillLevel(eventName: string, userLevel: string): { matches: boolean; level: string } {
   if (!userLevel) return { matches: false, level: '' };
   
@@ -803,9 +849,12 @@ function generateRecommendations(
 
   const bookedEventIDs = new Set(bookings.map(b => b.eventID));
 
-  console.log(`[DEBUG] Generating recommendations for ${profile.gender} user`);
+  console.log(`[DEBUG] ===== STARTING RECOMMENDATIONS =====`);
+  console.log(`[DEBUG] User gender: ${profile.gender}`);
+  console.log(`[DEBUG] User preferred sports:`, profile.preferredSports);
   console.log(`[DEBUG] User motivations:`, profile.motivations);
   console.log(`[DEBUG] User session format preference:`, profile.sessionFormatPreference);
+  console.log(`[DEBUG] User home borough:`, profile.homeBorough);
 
   // Filter to future, active, unbooked events
   let candidates = events.filter(event => {
@@ -817,13 +866,24 @@ function generateRecommendations(
            !bookedEventIDs.has(event.eventID);
   });
 
-  console.log(`[DEBUG] ${candidates.length} candidate events before gender filtering`);
+  console.log(`[DEBUG] ${candidates.length} candidate events before filtering`);
 
-  // FIRST: Filter out gender-incompatible sessions
+  // FIRST: Filter out children/youth sessions for adult users
+  candidates = candidates.filter(event => {
+    if (isChildrenSession(event.eventName, event.category)) {
+      console.log(`[DEBUG] ❌ Filtered out children's session: "${event.eventName}"`);
+      return false;
+    }
+    return true;
+  });
+
+  console.log(`[DEBUG] ${candidates.length} candidate events after children filtering`);
+
+  // SECOND: Filter out gender-incompatible sessions
   candidates = candidates.filter(event => {
     const genderCheck = checkGenderCompatibility(event.genderTarget, profile.gender);
     if (!genderCheck.isCompatible) {
-      console.log(`[DEBUG] Filtered out "${event.eventName}" due to gender incompatibility`);
+      console.log(`[DEBUG] ❌ Filtered out "${event.eventName}" due to gender incompatibility`);
     }
     return genderCheck.isCompatible;
   });
@@ -836,19 +896,20 @@ function generateRecommendations(
     let score = 0;
     const reasons: string[] = [];
 
-    // 1. SPORT/ACTIVITY MATCH (50 points)
+    // 1. SPORT/ACTIVITY MATCH (50 points) - using improved matching logic
     const sportMatch = profile.preferredSports.some(s => 
-      s.toLowerCase() === event.category.toLowerCase() ||
-      event.eventName.toLowerCase().includes(s.toLowerCase())
+      isSportMatch(s, event.category, event.eventName)
     );
     
     if (sportMatch) {
       score += 50;
       const matchedSport = profile.preferredSports.find(s => 
-        s.toLowerCase() === event.category.toLowerCase() ||
-        event.eventName.toLowerCase().includes(s.toLowerCase())
+        isSportMatch(s, event.category, event.eventName)
       );
       reasons.push(`${matchedSport || event.category} session`);
+      console.log(`[DEBUG] ✅ "${event.eventName}" matched sport: ${matchedSport} (+50 points)`);
+    } else {
+      console.log(`[DEBUG] ⚠️ "${event.eventName}" (${event.category}) - NO sport match with:`, profile.preferredSports);
     }
 
     // 2. GEOGRAPHIC PROXIMITY (35 points)
@@ -858,6 +919,7 @@ function generateRecommendations(
     if (profile.homeBorough && eventBorough.toLowerCase().includes(profile.homeBorough.toLowerCase())) {
       score += 35;
       reasons.push(`in ${eventBorough}`);
+      console.log(`[DEBUG] ✅ "${event.eventName}" exact borough match (+35 points)`);
     } 
     // Regional proximity (e.g., both in East London)
     else if (userRegion) {
@@ -865,6 +927,7 @@ function generateRecommendations(
       if (eventRegion === userRegion) {
         score += 25;
         reasons.push(`in ${eventRegion} London`);
+        console.log(`[DEBUG] ✅ "${event.eventName}" regional match: ${eventRegion} (+25 points)`);
       }
     }
 
@@ -875,6 +938,7 @@ function generateRecommendations(
     if (genderCheck.bonusPoints > 0 && genderCheck.matchReason) {
       score += genderCheck.bonusPoints;
       reasons.push(genderCheck.matchReason);
+      console.log(`[DEBUG] ✅ "${event.eventName}" gender match (+${genderCheck.bonusPoints} points)`);
     }
 
     // 4. MOTIVATIONS MATCH (25 points)
@@ -888,7 +952,7 @@ function generateRecommendations(
       
       if (motivationMatches.length > 0) {
         score += 25;
-        console.log(`[DEBUG] Motivation match for "${event.eventName}": ${motivationMatches.join(', ')}`);
+        console.log(`[DEBUG] ✅ "${event.eventName}" motivation match: ${motivationMatches.join(', ')} (+25 points)`);
         // Add the first matched motivation to reasons (keep it concise)
         reasons.push(`for ${motivationMatches[0].toLowerCase()}`);
       }
@@ -899,6 +963,7 @@ function generateRecommendations(
     if (skillMatch.matches) {
       score += 25;
       reasons.push(`${skillMatch.level} level`);
+      console.log(`[DEBUG] ✅ "${event.eventName}" skill level match (+25 points)`);
     }
 
     // 6. SESSION FORMAT MATCH (20 points)
@@ -909,7 +974,7 @@ function generateRecommendations(
       
       if (userFormatLower === eventFormatLower) {
         score += 20;
-        console.log(`[DEBUG] Session format match for "${event.eventName}": ${event.sessionFormat}`);
+        console.log(`[DEBUG] ✅ "${event.eventName}" session format match: ${event.sessionFormat} (+20 points)`);
         reasons.push(`${event.sessionFormat.toLowerCase()} format`);
       }
     }
@@ -920,6 +985,7 @@ function generateRecommendations(
       if (eventDay && profile.preferredDays.some(day => day.toLowerCase() === eventDay.toLowerCase())) {
         score += 20;
         reasons.push(`on ${eventDay}`);
+        console.log(`[DEBUG] ✅ "${event.eventName}" day match (+20 points)`);
       }
     }
 
@@ -929,6 +995,7 @@ function generateRecommendations(
       if (profile.preferredTimes.some(time => eventTime.includes(time.toLowerCase()))) {
         score += 15;
         reasons.push('at your preferred time');
+        console.log(`[DEBUG] ✅ "${event.eventName}" time match (+15 points)`);
       }
     }
 
@@ -938,12 +1005,10 @@ function generateRecommendations(
       if (event.price <= 5) {
         reasons.push('budget-friendly');
       }
+      console.log(`[DEBUG] ✅ "${event.eventName}" price bonus (+10 points)`);
     }
 
-    // Default minimum score for variety
-    if (score === 0) {
-      score = 5;
-    }
+    console.log(`[DEBUG] 📊 "${event.eventName}" final score: ${score} points`);
 
     // Build reason string
     let reason = reasons.length > 0 ? reasons.join(' · ') : 'New session in your area';
@@ -976,13 +1041,23 @@ function generateRecommendations(
   // Sort by score (highest first)
   scoredEvents.sort((a, b) => b.score - a.score);
 
-  console.log('[DEBUG] Total scored events before deduplication:', scoredEvents.length);
+  console.log('[DEBUG] ===== TOP 10 SCORED EVENTS =====');
+  scoredEvents.slice(0, 10).forEach((event, i) => {
+    console.log(`[DEBUG] #${i + 1}: "${event.title}" - ${event.score} pts (${event.displayPercentage}%) - ${event.reason}`);
+  });
+
+  // QUALITY THRESHOLD: Only show recommendations with score >= 40
+  // This ensures we don't show completely irrelevant sessions
+  const MIN_RECOMMENDATION_SCORE = 40;
+  const qualityRecommendations = scoredEvents.filter(rec => rec.score >= MIN_RECOMMENDATION_SCORE);
+
+  console.log(`[DEBUG] ${qualityRecommendations.length} events passed quality threshold (score >= ${MIN_RECOMMENDATION_SCORE})`);
 
   // Deduplicate by session template ID - only show one instance of each session
   const seenTemplateIDs = new Set<string>();
   const uniqueRecommendations: RecommendationCard[] = [];
   
-  for (const rec of scoredEvents) {
+  for (const rec of qualityRecommendations) {
     // Find the original event to get its sessionTemplateID
     const event = events.find(e => e.eventID === rec.eventID);
     const templateID = event?.sessionTemplateID?.trim() || '';
@@ -994,14 +1069,14 @@ function generateRecommendations(
     
     // Skip if we've already seen this session template
     if (seenTemplateIDs.has(uniqueKey)) {
-      console.log(`[DEBUG] Skipping duplicate session template: ${uniqueKey}`);
+      console.log(`[DEBUG] ⏭️ Skipping duplicate session template: ${uniqueKey}`);
       continue;
     }
     
     // Add to results and mark as seen
     seenTemplateIDs.add(uniqueKey);
     uniqueRecommendations.push(rec);
-    console.log(`[DEBUG] Added unique session: ${rec.title} (${uniqueKey})`);
+    console.log(`[DEBUG] ✅ Added unique session: ${rec.title} (${uniqueKey})`);
     
     // Stop once we have 5 unique sessions
     if (uniqueRecommendations.length >= 5) {
@@ -1009,13 +1084,12 @@ function generateRecommendations(
     }
   }
 
-  console.log('[DEBUG] Final unique recommendations count:', uniqueRecommendations.length);
-  console.log('[DEBUG] Top recommendations:', uniqueRecommendations.map(e => ({
-    title: e.title,
-    score: e.score,
-    displayPercentage: e.displayPercentage,
-    reason: e.reason
-  })));
+  console.log('[DEBUG] ===== FINAL RECOMMENDATIONS =====');
+  console.log(`[DEBUG] Returning ${uniqueRecommendations.length} unique recommendations`);
+  uniqueRecommendations.forEach((rec, i) => {
+    console.log(`[DEBUG] #${i + 1}: "${rec.title}" - ${rec.score} pts (${rec.displayPercentage}%)`);
+    console.log(`[DEBUG]       Reason: ${rec.reason}`);
+  });
 
   return uniqueRecommendations;
 }
