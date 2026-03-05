@@ -303,12 +303,14 @@ function checkGenderCompatibility(
 
   if (!sessionTarget || !userGen) return { isCompatible: true, bonusPoints: 0 };
 
+  // Women-only sessions
   if (sessionTarget.includes('women only')) {
     if (userGen === 'female') return { isCompatible: true, bonusPoints: 30, matchReason: "women's session" };
     if (userGen === 'male') return { isCompatible: false, bonusPoints: 0 };
   }
 
-  if (sessionTarget === 'men' || sessionTarget.includes('men only')) {
+  // Men-only sessions
+  if (sessionTarget.includes('men only') || sessionTarget === 'men') {
     if (userGen === 'male') return { isCompatible: true, bonusPoints: 30, matchReason: "men's session" };
     if (userGen === 'female') return { isCompatible: false, bonusPoints: 0 };
   }
@@ -386,7 +388,6 @@ function generateRecommendations(events: Event[], profile: UserProfile): Recomme
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  // Filter: future, active, not children
   let candidates = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
@@ -394,7 +395,6 @@ function generateRecommendations(events: Event[], profile: UserProfile): Recomme
     return eventDate >= now && isActive && !isChildrenSession(event.eventName, event.category);
   });
 
-  // Filter: gender compatibility
   candidates = candidates.filter(event => {
     return checkGenderCompatibility(event.genderTarget, profile.gender).isCompatible;
   });
@@ -515,11 +515,9 @@ function generateRecommendations(events: Event[], profile: UserProfile): Recomme
 
   scoredEvents.sort((a, b) => b.score - a.score);
 
-  // Quality threshold
   const MIN_SCORE = 60;
   const quality = scoredEvents.filter(r => r.score >= MIN_SCORE);
 
-  // Deduplicate by session template
   const seenTemplates = new Set<string>();
   const unique: RecommendationCard[] = [];
 
