@@ -1,7 +1,6 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/public/index.html" },
-    { "source": "/dashboard", "destination": "/public/dashboard.html" },
     { "source": "/recommendations", "destination": "/public/recommendations.html" }
   ]
 }
