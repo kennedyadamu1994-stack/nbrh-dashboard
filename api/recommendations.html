@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no, address=no">
+  <title>Find Your Sessions — The NBRH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:         #1B1B1B;
+      --surface:    rgba(255,255,255,0.03);
+      --border:     rgba(255,255,255,0.08);
+      --border-hover: rgba(255,27,110,0.35);
+      --pink:       #FF1B6E;
+      --pink-dim:   rgba(255,27,110,0.15);
+      --pink-mid:   rgba(255,27,110,0.25);
+      --text:       #ffffff;
+      --text-muted: rgba(255,255,255,0.5);
+      --text-faint: rgba(255,255,255,0.25);
+      --green:      #10b981;
+      --yellow:     #fbbf24;
+      --orange:     #fb923c;
+      --red:        #ef4444;
+      --radius:     3px;
+    }
+
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- TYPOGRAPHY ---- */
+    .serif { font-family: 'Young Serif', serif; }
+
+    /* ---- VIEWS ---- */
+    .view { display: none; }
+    .view.active { display: flex; }
+
+    /* ============================================================
+       LOGIN VIEW
+    ============================================================ */
+    #view-login {
+      min-height: 100vh;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle background texture */
+    #view-login::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(255,27,110,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(255,27,110,0.04) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 56px 48px;
+      max-width: 440px;
+      width: 100%;
+      position: relative;
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-logo img {
+      height: 44px;
+      width: auto;
+      display: block;
+      margin: 0 auto 20px;
+    }
+
+    .login-logo h1 {
+      font-family: 'Young Serif', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .login-logo h1 span {
+      color: var(--pink);
+    }
+
+    .login-logo p {
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 300;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 15px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+      outline: none;
+    }
+
+    .form-input::placeholder { color: var(--text-faint); }
+
+    .form-input:focus {
+      border-color: rgba(255,27,110,0.5);
+      background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 3px rgba(255,27,110,0.1);
+    }
+
+    .form-group { margin-bottom: 24px; }
+
+    .form-error {
+      font-size: 12px;
+      color: #ff6b6b;
+      margin-top: 8px;
+      display: none;
+      font-weight: 400;
+    }
+    .form-error.show { display: block; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 15px 24px;
+      background: var(--pink);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #d91659;
+      transform: scale(1.02);
+      box-shadow: 0 12px 32px rgba(255,27,110,0.3);
+    }
+
+    .btn-primary:disabled {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.3);
+      cursor: not-allowed;
+    }
+
+    .btn-primary .btn-loader {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn-primary.loading .btn-text { display: none; }
+    .btn-primary.loading .btn-loader { display: block; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ============================================================
+       RESULTS VIEW
+    ============================================================ */
+    #view-results {
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .results-header {
+      background: rgba(27,27,27,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .results-header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-logo {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .header-logo img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .header-greeting {
+      font-family: 'Young Serif', serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-muted);
+      flex: 1;
+      text-align: center;
+    }
+
+    .header-greeting strong {
+      color: var(--pink);
+    }
+
+    .btn-logout {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--border-hover);
+      color: var(--pink);
+    }
+
+    /* Loading / Error states */
+    .state-full {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255,255,255,0.08);
+      border-top-color: var(--pink);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 24px;
+    }
+
+    .state-full p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .state-full h2 {
+      font-family: 'Young Serif', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--pink);
+      margin-bottom: 10px;
+    }
+
+    .btn-retry {
+      margin-top: 24px;
+      background: var(--pink);
+      color: #fff;
+      border: none;
+      padding: 11px 28px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-retry:hover {
+      background: #d91659;
+      transform: scale(1.04);
+    }
+
+    /* Results content */
+    .results-body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      width: 100%;
+    }
+
+    /* Profile summary bar */
+    .profile-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 40px;
+      animation: fadeUp 0.4s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .profile-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .profile-bar-item span.label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .profile-bar-item span.value {
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .profile-bar-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Section heading */
+    .results-heading {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeUp 0.4s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .results-heading h2 {
+      font-family: 'Young Serif', serif;
+      font-size: 30px;
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .results-heading p {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    /* Recommendation list */
+    .rec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rec-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      gap: 0;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      color: inherit;
+      animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .rec-item:hover {
+      border-color: var(--border-hover);
+      transform: translateX(3px);
+      box-shadow: 0 8px 28px rgba(255,27,110,0.1);
+    }
+
+    /* Rank tab */
+    .rec-rank {
+      flex-shrink: 0;
+      width: 44px;
+      background: var(--pink-dim);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border-right: 1px solid rgba(255,27,110,0.12);
+    }
+
+    .rec-rank-num {
+      font-family: 'Young Serif', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--pink);
+      line-height: 1;
+    }
+
+    /* Image */
+    .rec-img {
+      flex-shrink: 0;
+      width: 100px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(255,27,110,0.12), rgba(255,27,110,0.04));
+    }
+
+    .rec-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Content */
+    .rec-content {
+      flex: 1;
+      min-width: 0;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rec-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .rec-title {
+      font-family: 'Young Serif', serif;
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: -0.3px;
+      line-height: 1.3;
+      color: var(--text);
+    }
+
+    .rec-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .rec-match {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+
+    .rec-match-pct {
+      font-family: 'Young Serif', serif;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .rec-match-label {
+      font-size: 10px;
+      color: var(--text-faint);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .rec-price {
+      font-family: 'Young Serif', serif;
+      font-size: 16px;
+      color: var(--pink);
+      letter-spacing: -0.3px;
+    }
+
+    .rec-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    .rec-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rec-reason {
+      font-size: 11px;
+      color: var(--pink);
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      opacity: 0.8;
+    }
+
+    /* Spots badge */
+    .rec-spots {
+      font-size: 11px;
+      color: var(--yellow);
+      font-weight: 400;
+    }
+
+    /* Divider */
+    .rec-divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state h3 {
+      font-family: 'Young Serif', serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 10px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* Footer */
+    .results-footer {
+      text-align: center;
+      margin-top: 56px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .results-footer a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--pink);
+      color: #fff;
+      padding: 13px 28px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .results-footer a:hover {
+      background: #d91659;
+      transform: scale(1.03);
+      box-shadow: 0 12px 32px rgba(255,27,110,0.3);
+    }
+
+    .results-footer p {
+      font-size: 12px;
+      color: var(--text-faint);
+      margin-top: 16px;
+      font-weight: 300;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Staggered rec items */
+    .rec-item:nth-child(1)  { animation-delay: 0.05s; }
+    .rec-item:nth-child(2)  { animation-delay: 0.10s; }
+    .rec-item:nth-child(3)  { animation-delay: 0.15s; }
+    .rec-item:nth-child(4)  { animation-delay: 0.20s; }
+    .rec-item:nth-child(5)  { animation-delay: 0.25s; }
+    .rec-item:nth-child(6)  { animation-delay: 0.30s; }
+    .rec-item:nth-child(7)  { animation-delay: 0.35s; }
+    .rec-item:nth-child(8)  { animation-delay: 0.40s; }
+    .rec-item:nth-child(9)  { animation-delay: 0.45s; }
+    .rec-item:nth-child(10) { animation-delay: 0.50s; }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 600px) {
+      .login-card { padding: 40px 28px; }
+
+      .rec-img { width: 76px; }
+
+      .rec-content { padding: 12px 14px; gap: 8px; }
+
+      .rec-title { font-size: 15px; }
+
+      .rec-match-pct { font-size: 18px; }
+
+      .rec-meta { gap: 4px 10px; }
+
+      .profile-bar { gap: 10px; }
+
+      .results-body { padding: 28px 16px 60px; }
+
+      .results-heading h2 { font-size: 24px; }
+
+      .header-greeting { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================
+       VIEW: LOGIN
+  ==================================================== -->
+  <div id="view-login" class="view active">
+    <div class="login-card">
+      <div class="login-logo">
+        <img
+          src="https://images.squarespace-cdn.com/content/6718416feaa24175e29324d4/9d6e6464-e1e5-4dde-9ae0-03df420cbd77/NBRH+Logo.png?content-type=image%2Fpng"
+          alt="The NBRH"
+        />
+        <h1 class="serif">Sessions picked <span>for you</span></h1>
+        <p>Enter your email to see your personalised recommendations</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="emailInput">Email address</label>
+          <input
+            type="email"
+            id="emailInput"
+            class="form-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+          <div class="form-error" id="loginError">Please enter a valid email address.</div>
+        </div>
+        <button type="submit" class="btn-primary" id="loginBtn">
+          <span class="btn-text">Show my recommendations →</span>
+          <div class="btn-loader"></div>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       VIEW: RESULTS
+  ==================================================== -->
+  <div id="view-results" class="view">
+
+    <!-- Header -->
+    <header class="results-header">
+      <div class="results-header-inner">
+        <a href="https://www.thenbrh.co.uk/" class="header-logo" target="_blank" rel="noopener noreferrer">
+          <img
+            src="https://images.squarespace-cdn.com/content/6718416feaa24175e29324d4/9d6e6464-e1e5-4dde-9ae0-03df420cbd77/NBRH+Logo.png?content-type=image%2Fpng"
+            alt="The NBRH"
+          />
+        </a>
+        <p class="header-greeting" id="headerGreeting">Loading…</p>
+        <button class="btn-logout" id="logoutBtn">Sign out</button>
+      </div>
+    </header>
+
+    <!-- Loading state -->
+    <div class="state-full" id="loadingState">
+      <div class="spinner"></div>
+      <p>Finding the best sessions for you…</p>
+    </div>
+
+    <!-- Error state -->
+    <div class="state-full" id="errorState" style="display:none;">
+      <h2>Something went wrong</h2>
+      <p id="errorMsg">We couldn't load your recommendations.</p>
+      <button class="btn-retry" id="retryBtn">Try again</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results-body" id="resultsBody" style="display:none;">
+
+      <!-- Profile summary bar -->
+      <div class="profile-bar" id="profileBar"></div>
+
+      <!-- Heading -->
+      <div class="results-heading">
+        <h2>Your top sessions</h2>
+        <p id="resultsSubtitle">Ranked by how well they match your preferences</p>
+      </div>
+
+      <!-- List -->
+      <div class="rec-list" id="recList"></div>
+
+      <!-- Footer CTA -->
+      <div class="results-footer">
+        <a href="https://www.thenbrh.co.uk/" target="_blank" rel="noopener noreferrer">
+          Browse all sessions on The NBRH
+        </a>
+        <p>Recommendations update as new sessions are added</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SCRIPT
+  ==================================================== -->
+  <script>
+    // ============================================================
+    // HELPERS
+    // ============================================================
+
+    function showView(id) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '–';
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      } catch {
+        return dateStr;
+      }
+    }
+
+    function getMatchColor(pct) {
+      if (pct >= 80) return '#10b981';
+      if (pct >= 60) return '#34d399';
+      if (pct >= 40) return '#fbbf24';
+      if (pct >= 25) return '#fb923c';
+      return '#ef4444';
+    }
+
+    function formatPrice(price) {
+      if (price === 0) return 'Free';
+      return `£${price.toFixed(2)}`;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ============================================================
+    // STATE
+    // ============================================================
+
+    let currentEmail = null;
+    let cachedData   = null;
+
+    // ============================================================
+    // INIT
+    // ============================================================
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Auto-login if we have a stored email
+      const stored = localStorage.getItem('nbrhRecsEmail');
+      if (stored) {
+        currentEmail = stored;
+        enterResults(stored);
+      }
+
+      // Login form
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+      // Logout
+      document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+      // Retry
+      document.getElementById('retryBtn').addEventListener('click', () => {
+        if (currentEmail) loadRecommendations(currentEmail);
+      });
+    });
+
+    // ============================================================
+    // AUTH
+    // ============================================================
+
+    function handleLogin(e) {
+      e.preventDefault();
+
+      const emailVal = document.getElementById('emailInput').value.trim().toLowerCase();
+      const errorEl  = document.getElementById('loginError');
+      const btn      = document.getElementById('loginBtn');
+
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!re.test(emailVal)) {
+        errorEl.classList.add('show');
+        return;
+      }
+
+      errorEl.classList.remove('show');
+      btn.disabled = true;
+      btn.classList.add('loading');
+
+      currentEmail = emailVal;
+      localStorage.setItem('nbrhRecsEmail', emailVal);
+
+      // Small delay for UX feel, then switch to results
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        enterResults(emailVal);
+      }, 350);
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('nbrhRecsEmail');
+      currentEmail = null;
+      cachedData   = null;
+      document.getElementById('emailInput').value = '';
+      showView('view-login');
+    }
+
+    function enterResults(email) {
+      // Update header greeting with email while loading
+      const shortEmail = email.length > 28 ? email.substring(0, 25) + '…' : email;
+      document.getElementById('headerGreeting').innerHTML = shortEmail;
+      showView('view-results');
+      loadRecommendations(email);
+    }
+
+    // ============================================================
+    // DATA LOADING
+    // ============================================================
+
+    async function loadRecommendations(email) {
+      // Show loading
+      document.getElementById('loadingState').style.display  = 'flex';
+      document.getElementById('errorState').style.display    = 'none';
+      document.getElementById('resultsBody').style.display   = 'none';
+
+      try {
+        const url = `/api/recommendations?email=${encodeURIComponent(email)}`;
+        const res  = await fetch(url);
+        const json = await res.json();
+
+        if (!json.success) {
+          throw new Error(json.error?.message || 'Failed to load recommendations.');
+        }
+
+        cachedData = json.data;
+        renderResults(json.data);
+
+      } catch (err) {
+        console.error('[Recommendations]', err);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display   = 'flex';
+        document.getElementById('errorMsg').textContent = err.message || 'Something went wrong. Please try again.';
+      }
+    }
+
+    // ============================================================
+    // RENDERING
+    // ============================================================
+
+    function renderResults(data) {
+      const { profile, recommendations } = data;
+
+      // Header greeting
+      const name = profile?.firstName || currentEmail;
+      document.getElementById('headerGreeting').innerHTML =
+        `Hi <strong>${escHtml(name)}</strong> — here are your picks`;
+
+      // Profile bar
+      renderProfileBar(profile);
+
+      // Subtitle
+      const count = recommendations.length;
+      document.getElementById('resultsSubtitle').textContent =
+        count === 0
+          ? 'Check back soon as new sessions are added'
+          : `${count} session${count !== 1 ? 's' : ''} matched to your preferences`;
+
+      // Recs list
+      renderRecList(recommendations);
+
+      // Show results panel
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('resultsBody').style.display  = 'block';
+    }
+
+    function renderProfileBar(profile) {
+      if (!profile) return;
+      const bar = document.getElementById('profileBar');
+
+      const items = [];
+
+      if (profile.homeBorough) {
+        items.push(`<div class="profile-bar-item">
+          <span class="label">Area</span>
+          <span class="value">${escHtml(profile.homeBorough)}</span>
+        </div>`);
+      }
+
+      if (profile.preferredSports && profile.preferredSports.length > 0) {
+        items.push(`<div class="profile-bar-item">
+          <span class="label">Sports</span>
+          <span class="value">${escHtml(profile.preferredSports.slice(0,3).join(', '))}</span>
+        </div>`);
+      }
+
+      if (profile.fitnessLevel) {
+        items.push(`<div class="profile-bar-item">
+          <span class="label">Level</span>
+          <span class="value">${escHtml(profile.fitnessLevel)}</span>
+        </div>`);
+      }
+
+      if (items.length === 0) return;
+
+      bar.innerHTML = items.join('<div class="profile-bar-sep"></div>');
+    }
+
+    function renderRecList(recommendations) {
+      const list = document.getElementById('recList');
+
+      if (!recommendations || recommendations.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <h3>No matching sessions right now</h3>
+            <p>We'll have more sessions that match your preferences coming soon. Check back shortly!</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = recommendations.map((rec, i) => {
+        const matchColor = getMatchColor(rec.displayPercentage);
+        const hasLink    = rec.bookingUrl && rec.bookingUrl !== '#';
+        const tag        = hasLink ? 'a' : 'div';
+        const href       = hasLink ? `href="${escHtml(rec.bookingUrl)}" target="_blank" rel="noopener noreferrer"` : '';
+
+        const spotsWarning = (rec.spotsRemaining !== undefined && rec.spotsRemaining <= 5 && rec.spotsRemaining > 0)
+          ? `<span class="rec-spots">⚠️ ${rec.spotsRemaining} spot${rec.spotsRemaining === 1 ? '' : 's'} left</span>`
+          : '';
+
+        return `
+          <${tag} class="rec-item" ${href}>
+            <div class="rec-rank">
+              <span class="rec-rank-num">${i + 1}</span>
+            </div>
+            <div class="rec-img">
+              ${rec.image ? `<img src="${escHtml(rec.image)}" alt="${escHtml(rec.title)}" loading="lazy" />` : ''}
+            </div>
+            <div class="rec-content">
+              <div class="rec-top">
+                <h3 class="rec-title">${escHtml(rec.title)}</h3>
+                <div class="rec-right">
+                  <div class="rec-match">
+                    <span class="rec-match-pct" style="color:${matchColor}">${rec.displayPercentage}%</span>
+                    <span class="rec-match-label">&nbsp;match</span>
+                  </div>
+                  <span class="rec-price">${formatPrice(rec.price)}</span>
+                  ${spotsWarning}
+                </div>
+              </div>
+              <div class="rec-meta">
+                ${rec.sport ? `<span class="rec-meta-item">🏃 ${escHtml(rec.sport)}</span>` : ''}
+                <span class="rec-meta-item">📅 ${formatDate(rec.date)}</span>
+                ${rec.time ? `<span class="rec-meta-item">🕐 ${escHtml(rec.time)}</span>` : ''}
+                ${rec.borough ? `<span class="rec-meta-item">📍 ${escHtml(rec.borough)}</span>` : ''}
+                ${rec.difficulty ? `<span class="rec-meta-item">⚡ ${escHtml(rec.difficulty)}</span>` : ''}
+              </div>
+              ${rec.reason ? `<p class="rec-reason">${escHtml(rec.reason)}</p>` : ''}
+            </div>
+          </${tag}>`;
+      }).join('');
+    }
+  </script>
+
+</body>
+</html>
