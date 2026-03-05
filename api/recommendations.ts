@@ -73,6 +73,11 @@ function getColumnIndex(headers: any[], columnName: string): number {
   );
 }
 
+function safeGet(row: any[], idx: number, fallback = ''): string {
+  if (idx < 0 || idx >= row.length) return fallback;
+  return row[idx]?.toString() || fallback;
+}
+
 async function getSheets() {
   const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountKey) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is missing');
@@ -160,15 +165,15 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
   const headers = rows[0];
   const dataRows = rows.slice(1);
 
-  const emailIdx = getColumnIndex(headers, 'Email');
-  const nameIdx = getColumnIndex(headers, 'Name');
-  const genderIdx = 3;
-  const boroughIdx = getColumnIndex(headers, 'Home Borough');
+  const emailIdx             = getColumnIndex(headers, 'Email');
+  const nameIdx              = getColumnIndex(headers, 'Name');
+  const genderIdx            = getColumnIndex(headers, 'Gender');
+  const boroughIdx           = getColumnIndex(headers, 'Home Borough');
   const favouriteActivityIdx = getColumnIndex(headers, 'Favourite Activity');
-  const experienceLevelIdx = getColumnIndex(headers, 'Experience Level');
-  const otherActivitiesIdx = getColumnIndex(headers, 'Other Activities Interested In');
-  const motivationsIdx = getColumnIndex(headers, 'Motivations');
-  const sessionFormatIdx = getColumnIndex(headers, 'Session Format Preference');
+  const experienceLevelIdx   = getColumnIndex(headers, 'Experience Level');
+  const otherActivitiesIdx   = getColumnIndex(headers, 'Other Activities Interested In');
+  const motivationsIdx       = getColumnIndex(headers, 'Motivations');
+  const sessionFormatIdx     = getColumnIndex(headers, 'Session Format Preference');
 
   if (emailIdx === -1) throw new Error('Email column not found in Onboarding Database');
 
@@ -178,37 +183,27 @@ async function fetchUserProfile(email: string): Promise<UserProfile | null> {
 
   if (!userRow) return null;
 
-  const fullName = nameIdx !== -1 ? userRow[nameIdx]?.toString() || '' : '';
+  const fullName  = safeGet(userRow, nameIdx);
   const nameParts = fullName.split(' ');
 
   const preferredSports: string[] = [];
-  if (favouriteActivityIdx !== -1 && userRow[favouriteActivityIdx]) {
-    preferredSports.push(userRow[favouriteActivityIdx].toString());
-  }
-  if (otherActivitiesIdx !== -1 && userRow[otherActivitiesIdx]) {
-    preferredSports.push(...parseCommaSeparated(userRow[otherActivitiesIdx].toString()));
-  }
-
-  const motivations = motivationsIdx !== -1 && userRow[motivationsIdx]
-    ? parseCommaSeparated(userRow[motivationsIdx].toString())
-    : [];
-
-  const sessionFormatPreference = sessionFormatIdx !== -1 && userRow[sessionFormatIdx]
-    ? userRow[sessionFormatIdx].toString()
-    : '';
+  const favActivity = safeGet(userRow, favouriteActivityIdx);
+  if (favActivity) preferredSports.push(favActivity);
+  const otherActivities = safeGet(userRow, otherActivitiesIdx);
+  if (otherActivities) preferredSports.push(...parseCommaSeparated(otherActivities));
 
   return {
-    email: userRow[emailIdx]?.toString() || '',
-    firstName: nameParts[0] || '',
-    lastName: nameParts.slice(1).join(' ') || '',
-    homeBorough: boroughIdx !== -1 ? userRow[boroughIdx]?.toString() || '' : '',
-    preferredSports: preferredSports.length > 0 ? preferredSports : [],
-    preferredDays: [],
-    preferredTimes: [],
-    fitnessLevel: experienceLevelIdx !== -1 ? userRow[experienceLevelIdx]?.toString() || '' : '',
-    motivations,
-    sessionFormatPreference,
-    gender: genderIdx !== -1 ? userRow[genderIdx]?.toString() || '' : '',
+    email:                   safeGet(userRow, emailIdx),
+    firstName:               nameParts[0] || '',
+    lastName:                nameParts.slice(1).join(' ') || '',
+    homeBorough:             safeGet(userRow, boroughIdx),
+    preferredSports,
+    preferredDays:           [],
+    preferredTimes:          [],
+    fitnessLevel:            safeGet(userRow, experienceLevelIdx),
+    motivations:             parseCommaSeparated(safeGet(userRow, motivationsIdx)),
+    sessionFormatPreference: safeGet(userRow, sessionFormatIdx),
+    gender:                  safeGet(userRow, genderIdx),
   };
 }
 
@@ -226,24 +221,27 @@ async function fetchEvents(): Promise<Event[]> {
   const headers = rows[0];
   const dataRows = rows.slice(1);
 
-  const eventIDIdx = getColumnIndex(headers, 'event_id');
-  const sessionTemplateIDIdx = 28;
-  const eventNameIdx = getColumnIndex(headers, 'event_name');
-  const categoryIdx = getColumnIndex(headers, 'Category');
-  const dateIdx = getColumnIndex(headers, 'date');
-  const timeIdx = getColumnIndex(headers, 'time');
-  const endTimeIdx = getColumnIndex(headers, 'End Time');
-  const locationIdx = getColumnIndex(headers, 'location');
-  const boroughIdx = 27;
-  const genderTargetIdx = 29;
-  const motivationsIdx = 31;
-  const sessionFormatIdx = 32;
-  const priceIdx = getColumnIndex(headers, 'base_price');
+  // Named lookups
+  const eventIDIdx        = getColumnIndex(headers, 'event_id');
+  const eventNameIdx      = getColumnIndex(headers, 'event_name');
+  const categoryIdx       = getColumnIndex(headers, 'Category');
+  const dateIdx           = getColumnIndex(headers, 'date');
+  const timeIdx           = getColumnIndex(headers, 'time');
+  const endTimeIdx        = getColumnIndex(headers, 'End Time');
+  const locationIdx       = getColumnIndex(headers, 'location');
+  const priceIdx          = getColumnIndex(headers, 'base_price');
   const spotsRemainingIdx = getColumnIndex(headers, 'spots_remaining');
-  const bookingUrlIdx = getColumnIndex(headers, 'booking_url');
-  const durationIdx = getColumnIndex(headers, 'Duration Minutes');
-  const activeIdx = getColumnIndex(headers, 'active');
-  const imageUrlIdx = getColumnIndex(headers, 'Image URL');
+  const bookingUrlIdx     = getColumnIndex(headers, 'booking_url');
+  const durationIdx       = getColumnIndex(headers, 'Duration Minutes');
+  const activeIdx         = getColumnIndex(headers, 'active');
+  const imageUrlIdx       = getColumnIndex(headers, 'Image URL');
+
+  // Fixed positional columns — no !== -1 checks needed, always present
+  const BOROUGH_COL           = 27;
+  const SESSION_TEMPLATE_COL  = 28;
+  const GENDER_TARGET_COL     = 29;
+  const MOTIVATIONS_COL       = 31;
+  const SESSION_FORMAT_COL    = 32;
 
   const events: Event[] = [];
 
@@ -251,24 +249,24 @@ async function fetchEvents(): Promise<Event[]> {
     if (!row[eventIDIdx]) continue;
 
     events.push({
-      eventID: row[eventIDIdx]?.toString() || '',
-      sessionTemplateID: row[sessionTemplateIDIdx]?.toString() || '',
-      eventName: eventNameIdx !== -1 ? row[eventNameIdx]?.toString() || '' : '',
-      category: categoryIdx !== -1 ? row[categoryIdx]?.toString() || '' : '',
-      date: dateIdx !== -1 ? row[dateIdx]?.toString() || '' : '',
-      time: timeIdx !== -1 ? row[timeIdx]?.toString() || '' : '',
-      endTime: endTimeIdx !== -1 ? row[endTimeIdx]?.toString() || '' : '',
-      location: locationIdx !== -1 ? row[locationIdx]?.toString() || '' : '',
-      borough: row[boroughIdx]?.toString() || '',
-      price: priceIdx !== -1 ? parsePrice(row[priceIdx]?.toString() || '0') : 0,
-      spotsRemaining: spotsRemainingIdx !== -1 ? parseInt(row[spotsRemainingIdx]?.toString() || '0') : 0,
-      bookingUrl: bookingUrlIdx !== -1 ? row[bookingUrlIdx]?.toString() || '' : '',
-      durationMinutes: durationIdx !== -1 ? parseInt(row[durationIdx]?.toString() || '60') : 60,
-      active: activeIdx !== -1 ? row[activeIdx]?.toString() || 'TRUE' : 'TRUE',
-      imageUrl: imageUrlIdx !== -1 ? row[imageUrlIdx]?.toString() || '' : '',
-      genderTarget: row[genderTargetIdx]?.toString() || '',
-      motivations: row[motivationsIdx] ? parseCommaSeparated(row[motivationsIdx].toString()) : [],
-      sessionFormat: row[sessionFormatIdx]?.toString() || '',
+      eventID:           safeGet(row, eventIDIdx),
+      sessionTemplateID: safeGet(row, SESSION_TEMPLATE_COL),
+      eventName:         safeGet(row, eventNameIdx),
+      category:          safeGet(row, categoryIdx),
+      date:              safeGet(row, dateIdx),
+      time:              safeGet(row, timeIdx),
+      endTime:           safeGet(row, endTimeIdx),
+      location:          safeGet(row, locationIdx),
+      borough:           safeGet(row, BOROUGH_COL),
+      price:             parsePrice(safeGet(row, priceIdx, '0')),
+      spotsRemaining:    parseInt(safeGet(row, spotsRemainingIdx, '0')),
+      bookingUrl:        safeGet(row, bookingUrlIdx),
+      durationMinutes:   parseInt(safeGet(row, durationIdx, '60')),
+      active:            safeGet(row, activeIdx, 'TRUE'),
+      imageUrl:          safeGet(row, imageUrlIdx),
+      genderTarget:      safeGet(row, GENDER_TARGET_COL),
+      motivations:       parseCommaSeparated(safeGet(row, MOTIVATIONS_COL)),
+      sessionFormat:     safeGet(row, SESSION_FORMAT_COL),
     });
   }
 
@@ -280,10 +278,10 @@ async function fetchEvents(): Promise<Event[]> {
 // ==========================================
 
 const LONDON_REGIONS: Record<string, string[]> = {
-  East: ['Hackney', 'Tower Hamlets', 'Newham', 'Waltham Forest', 'Redbridge', 'Barking', 'Dagenham', 'Havering'],
-  West: ['Hammersmith', 'Fulham', 'Ealing', 'Hounslow', 'Brent', 'Hillingdon', 'Harrow'],
-  North: ['Camden', 'Islington', 'Haringey', 'Enfield', 'Barnet'],
-  South: ['Lambeth', 'Southwark', 'Lewisham', 'Greenwich', 'Bromley', 'Croydon', 'Sutton', 'Merton'],
+  East:    ['Hackney', 'Tower Hamlets', 'Newham', 'Waltham Forest', 'Redbridge', 'Barking', 'Dagenham', 'Havering'],
+  West:    ['Hammersmith', 'Fulham', 'Ealing', 'Hounslow', 'Brent', 'Hillingdon', 'Harrow'],
+  North:   ['Camden', 'Islington', 'Haringey', 'Enfield', 'Barnet'],
+  South:   ['Lambeth', 'Southwark', 'Lewisham', 'Greenwich', 'Bromley', 'Croydon', 'Sutton', 'Merton'],
   Central: ['Westminster', 'Kensington', 'Chelsea', 'City of London'],
 };
 
@@ -299,19 +297,17 @@ function checkGenderCompatibility(
   userGender: string
 ): { isCompatible: boolean; bonusPoints: number; matchReason?: string } {
   const sessionTarget = sessionGenderTarget.trim().toLowerCase();
-  const userGen = userGender.trim().toLowerCase();
+  const userGen       = userGender.trim().toLowerCase();
 
   if (!sessionTarget || !userGen) return { isCompatible: true, bonusPoints: 0 };
 
-  // Women-only sessions
   if (sessionTarget.includes('women only')) {
     if (userGen === 'female') return { isCompatible: true, bonusPoints: 30, matchReason: "women's session" };
-    if (userGen === 'male') return { isCompatible: false, bonusPoints: 0 };
+    if (userGen === 'male')   return { isCompatible: false, bonusPoints: 0 };
   }
 
-  // Men-only sessions
   if (sessionTarget.includes('men only') || sessionTarget === 'men') {
-    if (userGen === 'male') return { isCompatible: true, bonusPoints: 30, matchReason: "men's session" };
+    if (userGen === 'male')   return { isCompatible: true, bonusPoints: 30, matchReason: "men's session" };
     if (userGen === 'female') return { isCompatible: false, bonusPoints: 0 };
   }
 
@@ -349,8 +345,8 @@ function isChildrenSession(eventName: string, eventCategory: string): boolean {
 
 function isSportMatch(userSport: string, eventCategory: string, eventName: string): boolean {
   const userSportLower = userSport.toLowerCase().trim();
-  const categoryLower = eventCategory.toLowerCase().trim();
-  const nameLower = eventName.toLowerCase().trim();
+  const categoryLower  = eventCategory.toLowerCase().trim();
+  const nameLower      = eventName.toLowerCase().trim();
 
   if (userSportLower === categoryLower) return true;
 
@@ -371,8 +367,8 @@ function isSportMatch(userSport: string, eventCategory: string, eventName: strin
 
 function matchesSkillLevel(eventName: string, userLevel: string): { matches: boolean; level: string } {
   if (!userLevel) return { matches: false, level: '' };
-  const eventLower = eventName.toLowerCase();
-  const userLower = userLevel.toLowerCase();
+  const eventLower  = eventName.toLowerCase();
+  const userLower   = userLevel.toLowerCase();
   const skillLevels = ['beginner', 'intermediate', 'advanced', 'all levels', 'mixed ability'];
 
   for (const level of skillLevels) {
@@ -395,9 +391,9 @@ function generateRecommendations(events: Event[], profile: UserProfile): Recomme
     return eventDate >= now && isActive && !isChildrenSession(event.eventName, event.category);
   });
 
-  candidates = candidates.filter(event => {
-    return checkGenderCompatibility(event.genderTarget, profile.gender).isCompatible;
-  });
+  candidates = candidates.filter(event =>
+    checkGenderCompatibility(event.genderTarget, profile.gender).isCompatible
+  );
 
   const userRegion = profile.homeBorough ? getBoroughRegion(profile.homeBorough) : null;
 
@@ -495,35 +491,35 @@ function generateRecommendations(events: Event[], profile: UserProfile): Recomme
       : 'New session in your area';
 
     return {
-      eventID: event.eventID,
-      title: event.eventName,
-      sport: event.category,
-      date: event.date,
-      time: event.time,
-      venue: event.location,
-      borough: eventBorough,
-      price: event.price,
-      difficulty: skillMatch.level || '',
+      eventID:           event.eventID,
+      title:             event.eventName,
+      sport:             event.category,
+      date:              event.date,
+      time:              event.time,
+      venue:             event.location,
+      borough:           eventBorough,
+      price:             event.price,
+      difficulty:        skillMatch.level || '',
       score,
       displayPercentage: calculateDisplayPercentage(score),
       reason,
-      image: event.imageUrl || '',
-      bookingUrl: event.bookingUrl || '',
-      spotsRemaining: event.spotsRemaining,
+      image:             event.imageUrl || '',
+      bookingUrl:        event.bookingUrl || '',
+      spotsRemaining:    event.spotsRemaining,
     };
   });
 
   scoredEvents.sort((a, b) => b.score - a.score);
 
   const MIN_SCORE = 60;
-  const quality = scoredEvents.filter(r => r.score >= MIN_SCORE);
+  const quality   = scoredEvents.filter(r => r.score >= MIN_SCORE);
 
   const seenTemplates = new Set<string>();
   const unique: RecommendationCard[] = [];
 
   for (const rec of quality) {
     const event = events.find(e => e.eventID === rec.eventID);
-    const key = event?.sessionTemplateID?.trim() || rec.eventID;
+    const key   = event?.sessionTemplateID?.trim() || rec.eventID;
     if (seenTemplates.has(key)) continue;
     seenTemplates.add(key);
     unique.push(rec);
@@ -568,11 +564,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       data: {
         profile: {
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          homeBorough: profile.homeBorough,
+          firstName:       profile.firstName,
+          lastName:        profile.lastName,
+          homeBorough:     profile.homeBorough,
           preferredSports: profile.preferredSports,
-          fitnessLevel: profile.fitnessLevel,
+          fitnessLevel:    profile.fitnessLevel,
         },
         recommendations,
         total: recommendations.length,
